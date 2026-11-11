@@ -1,0 +1,55 @@
+name: Tests et installeurs
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm --prefix templates/socle ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Démo de bout en bout (scénario, sans clé API)
+        run: npm run demo:headless -- --vitesse 40
+
+  installeurs:
+    needs: tests
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            cible: --mac
+          - os: windows-latest
+            cible: --win
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Dépendances du template installées pour la plateforme cible (binaires natifs de Tailwind et Vite).
+      - run: npm --prefix templates/socle ci
+      - run: npm run build
+      - run: npx electron-builder ${{ matrix.cible }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AutoBuild-${{ runner.os }}
+          path: |
+            release/*.dmg
+            release/*.exe
+          if-no-files-found: error

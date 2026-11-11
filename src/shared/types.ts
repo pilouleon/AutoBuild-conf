@@ -28,6 +28,8 @@ export interface Brand {
   /** Chemin local du logo téléchargé (ou data URL). */
   logoPath?: string
   logoUrl?: string
+  /** Logo en data URL, pour l'affichage dans l'interface. */
+  logoDataUrl?: string
   couleurs: BrandColors
   /** Description courte de l'activité trouvée sur le site. */
   description?: string

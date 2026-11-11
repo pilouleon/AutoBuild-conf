@@ -6,7 +6,7 @@
 //  3. Garde-fou : après chaque étape IA, la maquette est compilée ; si ça casse, retour à l'instantané précédent.
 //  4. Fin d'appel : étape de finition + vérification.
 
-import { copyFileSync, existsSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { extname, join } from 'node:path'
 import { briefStateForPrompt } from '@shared/brief/prompt'
 import type { Brief } from '@shared/brief/schema'
@@ -61,6 +61,8 @@ export class Generator {
   private dataStepDone = false
   private stopped = false
   private abort?: AbortController
+  /** Échecs consécutifs de l'IA : au-delà de 2, l'IA est coupée pour ce rendez-vous. */
+  private agentFailures = 0
 
   constructor(private deps: GeneratorDeps) {}
 
@@ -78,7 +80,7 @@ export class Generator {
   private endStep(step: GenerationStep, status: StepStatus, message?: string): void {
     step.status = status
     step.endedAt = Date.now()
-    step.message = message
+    step.message = message && message.length > 320 ? `${message.slice(0, 320)}…` : message
     this.emit()
   }
 
@@ -111,7 +113,8 @@ export class Generator {
       this.emit()
       this.deps.log(`Maquette prête : ${this.state.previewUrl}`, 'success')
     } catch (err) {
-      this.endStep(step, 'echec', (err as Error).message)
+      for (const s of this.state.steps) if (s.status === 'en_cours') this.endStep(s, 'echec', (err as Error).message)
+      this.deps.log(`Préparation de la maquette : ${(err as Error).message}`, 'error')
       this.state.status = 'erreur'
       this.emit()
       throw err
@@ -120,6 +123,8 @@ export class Generator {
 
   private writeBrandFiles(input: PrepareInput): void {
     const ws = this.ws!
+    // Le dossier des fichiers de marque peut ne pas exister (dossier vide non versionné).
+    mkdirSync(ws.path(ws.template.brandAssetsDir), { recursive: true })
     let logo = ''
     if (input.brand.logoPath && existsSync(input.brand.logoPath)) {
       const name = `logo${extname(input.brand.logoPath) || '.png'}`
@@ -168,7 +173,7 @@ export class Generator {
     if (!this.state.agentOwnsApp && !this.running) {
       if (this.writeBaseline()) {
         this.state.lastGoodCommit = this.ws.snapshot('base')
-        this.state.activity = 'Version de base mise à jour'
+        this.deps.log('Maquette de base mise à jour avec les nouvelles infos du brief')
         this.emit()
       }
     }
@@ -177,7 +182,15 @@ export class Generator {
 
   private agentAvailable(): boolean {
     const c = this.deps.agentConfig()
-    return c.enabled && !!c.apiKey
+    return c.enabled && !!c.apiKey && this.agentFailures < 2
+  }
+
+  private agentFailed(message: string): void {
+    this.agentFailures++
+    if (this.agentFailures >= 2) {
+      this.deps.log(`IA de génération coupée pour ce rendez-vous après 2 échecs (${message}). La maquette de base continue d'être mise à jour.`, 'error')
+      if (this.state.agentOwnsApp === false) this.writeBaseline()
+    }
   }
 
   private scheduleAgent(): void {
@@ -204,7 +217,7 @@ export class Generator {
     }
     this.running = this.runAgentStep(kind).finally(() => {
       this.running = undefined
-      if (this.stopped) return
+      if (this.stopped || !this.agentAvailable()) return
       if (this.brief && mockupSignature(this.brief) !== this.lastAgentSignature) this.scheduleAgent()
       else if (!this.dataStepDone && this.state.agentOwnsApp && this.state.status !== 'erreur') {
         this.dataStepDone = true
@@ -250,10 +263,13 @@ export class Generator {
       ws.restore(before)
       this.endStep(step, 'echec', `Modifications annulées (compilation impossible). ${res.message}`.slice(0, 400))
       this.deps.log('Étape IA annulée : retour à la version précédente de la maquette.', 'warn')
+      this.agentFailed('compilation impossible')
     } else if (!res.ok && !res.filesTouched.length) {
       this.endStep(step, 'echec', res.message)
       this.deps.log(res.message, 'error')
+      this.agentFailed(res.message)
     } else {
+      this.agentFailures = 0
       this.state.lastGoodCommit = ws.snapshot(`ok-${kind}`)
       this.state.agentOwnsApp = true
       this.lastAgentSignature = signature

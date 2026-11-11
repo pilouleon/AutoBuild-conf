@@ -1,7 +1,8 @@
 // Chef d'orchestre d'un rendez-vous : préparation → écoute → brief → maquette → finalisation.
 // Indépendant d'Electron (testable en ligne de commande, voir scripts/demo-headless.ts).
 
-import { join } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { extname, join } from 'node:path'
 import { applyPatch, applySiteInfo, defaultQuestions, setManualField } from '@shared/brief/merge'
 import { emptyBrief } from '@shared/brief/schema'
 import { slugify } from '@shared/mockup/baseline'
@@ -143,13 +144,29 @@ export class Session {
         this.log('marque', `Site inaccessible (${(err as Error).message}) : palette neutre utilisée.`, 'warn')
       }
     }
+    if (brand.logoPath) {
+      try {
+        const bytes = readFileSync(brand.logoPath)
+        if (bytes.length < 400_000) {
+          const ext = extname(brand.logoPath).slice(1).toLowerCase()
+          const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'jpg' ? 'image/jpeg' : ext === 'ico' ? 'image/x-icon' : `image/${ext}`
+          brand.logoDataUrl = `data:${mime};base64,${bytes.toString('base64')}`
+        }
+      } catch {
+        /* logo illisible */
+      }
+    }
     this.state.brand = brand
-    this.state.brief = applySiteInfo(this.state.brief, {
-      url: brand.url ?? prospect.url,
-      nom: brand.nomEntreprise,
-      identite: brand.url ? `Couleurs ${[brand.couleurs.primaire, brand.couleurs.secondaire].filter(Boolean).join(', ')}${brand.logoPath ? ', logo' : ''}${brand.police ? `, police ${brand.police}` : ''}${brand.ton ? `, ton ${brand.ton}` : ''}` : undefined,
-      secteur: this.secteur
-    })
+    if (brand.url) {
+      this.state.brief = applySiteInfo(this.state.brief, {
+        url: brand.url,
+        nom: brand.nomEntreprise,
+        identite: `Couleurs ${[brand.couleurs.primaire, brand.couleurs.secondaire].filter(Boolean).join(', ')}${brand.logoPath ? ', logo' : ''}${brand.police ? `, police ${brand.police}` : ''}${brand.ton ? `, ton ${brand.ton}` : ''}`,
+        secteur: this.secteur
+      })
+    } else if (prospect.nom) {
+      this.state.brief = setManualField(this.state.brief, 'entreprise_nom', prospect.nom)
+    }
     this.state.brief.questionsSuggerees = defaultQuestions(this.state.brief)
     this.emit(true)
 
@@ -195,6 +212,17 @@ export class Session {
       this.player = new ScenarioPlayer(this.scenario, speed, (seg) => this.addSegment(seg), () => this.log('session', 'Fin du scénario de démonstration.', 'info'))
       this.player.start()
       this.log('session', `Simulation « ${this.scenario.titre} » (vitesse ×${speed})`)
+    } else if (process.env.AUTOBUILD_TRANSCRIPTION_TEST === '1') {
+      // Test de la chaîne audio sans clé : chaque tronçon reçu devient un segment « technique ».
+      this.transcriber = {
+        mode: 'tronçons',
+        start: async () => {},
+        stop: async () => {},
+        pushPcm: () => {},
+        pushChunk: (speaker, startMs, endMs, wav) => this.addSegment({ speaker, startMs, endMs, text: `[test] tronçon audio reçu : ${((endMs - startMs) / 1000).toFixed(1)} s, ${wav.length} octets` })
+      }
+      this.state.transcription = { ...this.state.transcription, mode: 'tronçons', status: 'actif', error: undefined }
+      this.log('transcription', 'Mode test de la chaîne audio (AUTOBUILD_TRANSCRIPTION_TEST)', 'warn')
     } else {
       if (!keys.gemini) {
         this.state.transcription.status = 'erreur'

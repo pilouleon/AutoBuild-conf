@@ -88,7 +88,8 @@ export async function runAgent(o: AgentRunOptions): Promise<AgentRunResult> {
         }
       } else if (msg.type === 'result') {
         const cost = msg.total_cost_usd
-        if (msg.subtype === 'success') return { ok: true, message: msg.result?.trim() || summary || 'Étape terminée', costUsd: cost, filesTouched: [...filesTouched] }
+        if (msg.subtype === 'success' && !msg.is_error) return { ok: true, message: msg.result?.trim() || summary || 'Étape terminée', costUsd: cost, filesTouched: [...filesTouched] }
+        if (msg.subtype === 'success') return { ok: false, message: `Erreur de l'IA : ${msg.result?.trim() || 'erreur inconnue'}${msg.api_error_status ? ` (HTTP ${msg.api_error_status})` : ''}`, costUsd: cost, filesTouched: [...filesTouched] }
         return { ok: false, message: `Agent arrêté : ${msg.subtype}`, costUsd: cost, filesTouched: [...filesTouched] }
       }
     }

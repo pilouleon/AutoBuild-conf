@@ -10,9 +10,21 @@ export function nodeCommand(): { command: string; env: NodeJS.ProcessEnv } {
   return { command: process.execPath, env }
 }
 
+// Processus enfants encore vivants : arrêtés quoi qu'il arrive à la fermeture de l'application.
+const children = new Set<ChildProcess>()
+process.on('exit', killAllChildren)
+
+export function killAllChildren(): void {
+  for (const c of children) c.kill()
+  children.clear()
+}
+
 export function spawnNode(script: string, args: string[], cwd: string, extraEnv: Record<string, string> = {}): ChildProcess {
   const { command, env } = nodeCommand()
-  return spawn(command, [join(cwd, script), ...args], { cwd, env: { ...env, ...extraEnv }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
+  const child = spawn(command, [join(cwd, script), ...args], { cwd, env: { ...env, ...extraEnv }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true })
+  children.add(child)
+  child.on('exit', () => children.delete(child))
+  return child
 }
 
 export function runNode(script: string, args: string[], cwd: string, timeoutMs = 120_000): Promise<{ code: number; output: string }> {

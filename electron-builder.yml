@@ -1,0 +1,42 @@
+appId: fr.autobuild.maquette
+productName: AutoBuild
+copyright: Maquette sur mesure générée pendant le rendez-vous prospect
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+  # Variantes musl (Alpine) du binaire de l'agent : inutiles sur un poste de travail.
+  - '!node_modules/@anthropic-ai/claude-agent-sdk-*-musl/**'
+# Le binaire de l'agent Claude (Claude Agent SDK) doit être hors de l'archive asar pour être exécuté.
+asarUnpack:
+  - node_modules/@anthropic-ai/claude-agent-sdk*/**
+extraResources:
+  # Templates avec leurs dépendances installées (la maquette tourne sans réseau ni npm chez le commercial).
+  - from: templates
+    to: templates
+    # Uniquement le dist/ et le cache du template lui-même : surtout pas ceux de node_modules (vite/dist…).
+    filter: ['**/*', '!*/dist/**', '!*/.vite-cache/**']
+  - from: scenarios
+    to: scenarios
+mac:
+  target:
+    - target: dmg
+      arch: [arm64]
+  category: public.app-category.business
+  identity: null
+  extendInfo:
+    NSMicrophoneUsageDescription: AutoBuild transcrit votre voix pendant le rendez-vous pour remplir le brief.
+    NSAudioCaptureUsageDescription: AutoBuild capte le son de la visio (la voix du prospect) pour la transcription.
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: AutoBuild-Setup-${version}.${ext}
+dmg:
+  artifactName: AutoBuild-${version}-${arch}.${ext}
