@@ -1,0 +1,208 @@
+{
+  "id": "ternovia-chantiers",
+  "titre": "Ternovia — pilotage de chantiers (travaux publics)",
+  "description": "Faux R1 d'environ 9 minutes : une entreprise de travaux publics (85 salariés, 3 agences) veut remplacer ses fichiers Excel par une application de suivi des chantiers, des heures et des engins. Entreprise et personnes fictives.",
+  "prospect": {
+    "nom": "Ternovia",
+    "url": "site/index.html",
+    "notes": "Lead entrant via le formulaire du site. Entreprise fictive pour la démonstration."
+  },
+  "segments": [
+    { "t": 0, "d": 8, "speaker": "commercial", "text": "Bonjour Claire, merci d'avoir pris le temps pour ce premier échange. Pour commencer, est-ce que vous pouvez me présenter Ternovia en quelques mots ?" },
+    { "t": 9, "d": 22, "speaker": "prospect", "text": "Bonjour. Alors Ternovia, c'est une entreprise de travaux publics, on fait de la voirie, des réseaux et du terrassement. On est quatre-vingt-cinq salariés répartis sur trois agences, à Caen, Rouen et Évreux." },
+    { "t": 32, "d": 6, "speaker": "commercial", "text": "Très bien. Et vous, quel est votre rôle dans le projet ?" },
+    { "t": 39, "d": 12, "speaker": "prospect", "text": "Je suis directrice administrative et financière, et c'est moi qui porte le projet avec Marc, notre directeur travaux, qui est avec moi aujourd'hui." },
+    { "t": 52, "d": 8, "speaker": "prospect", "text": "Bonjour, oui, Marc Delaunay, je gère les conducteurs de travaux et les équipes sur le terrain." },
+    { "t": 61, "d": 8, "speaker": "commercial", "text": "Enchanté. Qu'est-ce qui vous pousse à lancer ce projet maintenant ?" },
+    { "t": 70, "d": 26, "speaker": "prospect", "text": "Honnêtement on est arrivés au bout du système actuel. Aujourd'hui tout le suivi des chantiers est sur Excel, chaque conducteur a son fichier, et en fin de mois on passe trois jours à consolider pour savoir où on en est. Et on découvre les dérapages de marge beaucoup trop tard." },
+    { "t": 97, "d": 7, "speaker": "commercial", "text": "D'accord. Donc l'idée serait d'avoir un outil commun pour suivre les chantiers ?" },
+    { "t": 105, "d": 24, "speaker": "prospect", "text": "Oui, c'est ça. On voudrait une application métier sur mesure pour piloter nos chantiers, parce que les logiciels BTP du marché qu'on a regardés sont trop lourds et pas adaptés à notre façon de travailler." },
+    { "t": 130, "d": 9, "speaker": "commercial", "text": "Qu'est-ce que vous suivez aujourd'hui pour chaque chantier, concrètement ?" },
+    { "t": 140, "d": 28, "speaker": "prospect", "text": "Pour chaque chantier on suit le client, l'adresse, le conducteur de travaux, la date de début, la date de fin prévue, le montant du marché et l'avancement en pourcentage. Et surtout le budget consommé par rapport au budget prévu." },
+    { "t": 169, "d": 7, "speaker": "commercial", "text": "Et les équipes, les engins, ça rentre aussi dans l'outil ?" },
+    { "t": 177, "d": 26, "speaker": "prospect", "text": "Oui, c'est le deuxième gros sujet. Les chefs d'équipe font le pointage des heures sur papier, on ressaisit tout. On voudrait qu'ils pointent les heures par chantier directement sur tablette, et pouvoir affecter les engins aux chantiers, les pelles, les camions, les compacteurs." },
+    { "t": 204, "d": 6, "speaker": "commercial", "text": "Donc une utilisation sur le terrain, sur tablette." },
+    { "t": 211, "d": 14, "speaker": "prospect", "text": "Voilà, sur tablette pour les chefs d'équipe et les conducteurs, et au bureau pour l'administratif et la direction. Parfois sans réseau sur les chantiers d'ailleurs." },
+    { "t": 226, "d": 9, "speaker": "commercial", "text": "Ok. Et si vous deviez me dire l'écran le plus important pour vous, ce serait lequel ?" },
+    { "t": 236, "d": 26, "speaker": "prospect", "text": "Pour moi, c'est un tableau de bord avec la marge par chantier et les chantiers en dérive. Je veux voir en un coup d'œil les chantiers où le budget consommé dépasse l'avancement. Et le chiffre d'affaires réalisé par agence." },
+    { "t": 263, "d": 16, "speaker": "prospect", "text": "Et pour moi c'est le planning des équipes et des engins sur la semaine, pour savoir qui est où et ce qui est disponible." },
+    { "t": 280, "d": 9, "speaker": "commercial", "text": "Très clair. Côté utilisateurs, combien de personnes utiliseraient l'outil ?" },
+    { "t": 290, "d": 24, "speaker": "prospect", "text": "Il y aurait la direction, donc trois personnes, les douze conducteurs de travaux, une vingtaine de chefs d'équipe, et le service administratif, quatre personnes, pour la facturation et les situations de travaux." },
+    { "t": 315, "d": 8, "speaker": "commercial", "text": "Vous parlez de situations de travaux, la facturation doit être dans l'outil aussi ?" },
+    { "t": 324, "d": 24, "speaker": "prospect", "text": "On voudrait au moins préparer les situations de travaux mensuelles dans l'outil, avec le pourcentage d'avancement, et ensuite les exporter vers Sage, notre logiciel de comptabilité. La compta, elle reste dans Sage." },
+    { "t": 349, "d": 7, "speaker": "commercial", "text": "D'accord, donc une intégration avec Sage. D'autres logiciels à connecter ?" },
+    { "t": 357, "d": 12, "speaker": "prospect", "text": "La paie, qui est chez un prestataire, ce serait bien d'envoyer les heures pointées. Mais c'est secondaire." },
+    { "t": 370, "d": 10, "speaker": "commercial", "text": "Parlons calendrier. Pour quand auriez-vous besoin d'une première version ?" },
+    { "t": 381, "d": 18, "speaker": "prospect", "text": "Idéalement on voudrait démarrer avec une agence pilote en mars, et généraliser aux trois agences avant l'été, parce que l'été c'est notre grosse saison." },
+    { "t": 400, "d": 10, "speaker": "commercial", "text": "Et en termes de budget, vous avez une enveloppe en tête ?" },
+    { "t": 411, "d": 20, "speaker": "prospect", "text": "On a validé une enveloppe entre soixante et quatre-vingt-dix mille euros pour la première phase. Après, s'il y a de la maintenance, c'est à part." },
+    { "t": 432, "d": 10, "speaker": "commercial", "text": "Et la décision, comment ça va se passer ? Qui d'autre va intervenir ?" },
+    { "t": 443, "d": 22, "speaker": "prospect", "text": "On présentera les propositions au comité de direction, c'est notre PDG, Jean-Pierre Hamon, qui tranche. On consulte aussi un éditeur de logiciel BTP et une autre agence de développement." },
+    { "t": 466, "d": 8, "speaker": "commercial", "text": "Sur quels critères allez-vous faire votre choix ?" },
+    { "t": 475, "d": 20, "speaker": "prospect", "text": "La simplicité pour le terrain, c'est le critère numéro un. Si les chefs d'équipe n'adhèrent pas, c'est mort. Ensuite le prix, et la capacité à faire évoluer l'outil." },
+    { "t": 496, "d": 10, "speaker": "commercial", "text": "Ça me parle beaucoup. Est-ce que vous avez des contraintes particulières, d'hébergement ou de sécurité ?" },
+    { "t": 507, "d": 14, "speaker": "prospect", "text": "Pas vraiment, si ce n'est le mode hors ligne sur tablette, et que ce soit hébergé en France." },
+    { "t": 522, "d": 16, "speaker": "commercial", "text": "Parfait. Je vous propose de vous montrer dans quelques minutes une première maquette de ce qu'on a compris, et de caler un second rendez-vous pour vous présenter une proposition détaillée." },
+    { "t": 539, "d": 12, "speaker": "prospect", "text": "Avec plaisir. On pourrait faire le second rendez-vous fin novembre, avec Jean-Pierre si possible." }
+  ],
+  "briefPatches": [
+    {
+      "apresSegment": 2,
+      "patch": {
+        "updates": [
+          { "fieldId": "secteur", "status": "obtenu", "valeur": "Travaux publics : voirie, réseaux et terrassement", "items": [], "preuves": [{ "segmentId": "S2", "citation": "c'est une entreprise de travaux publics, on fait de la voirie, des réseaux et du terrassement" }] },
+          { "fieldId": "taille", "status": "obtenu", "valeur": "85 salariés, 3 agences (Caen, Rouen, Évreux)", "items": [], "preuves": [{ "segmentId": "S2", "citation": "On est quatre-vingt-cinq salariés répartis sur trois agences, à Caen, Rouen et Évreux" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "contexte", "question": "Qu'est-ce qui vous amène à chercher un outil aujourd'hui ?" }, { "fieldId": "interlocuteur", "question": "Quel est votre rôle dans ce projet ?" }]
+      }
+    },
+    {
+      "apresSegment": 5,
+      "patch": {
+        "updates": [
+          { "fieldId": "interlocuteur", "status": "obtenu", "valeur": "Claire, directrice administrative et financière (porteuse du projet), avec Marc Delaunay, directeur travaux", "items": [], "preuves": [{ "segmentId": "S4", "citation": "Je suis directrice administrative et financière, et c'est moi qui porte le projet" }, { "segmentId": "S5", "citation": "Marc Delaunay, je gère les conducteurs de travaux et les équipes sur le terrain" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "contexte", "question": "Qu'est-ce qui vous pousse à lancer ce projet maintenant ?" }]
+      }
+    },
+    {
+      "apresSegment": 9,
+      "patch": {
+        "updates": [
+          { "fieldId": "contexte", "status": "obtenu", "valeur": "Suivi des chantiers éclaté dans des fichiers Excel par conducteur, 3 jours de consolidation par mois, dérapages de marge découverts trop tard", "items": [], "preuves": [{ "segmentId": "S7", "citation": "tout le suivi des chantiers est sur Excel, chaque conducteur a son fichier" }, { "segmentId": "S7", "citation": "on découvre les dérapages de marge beaucoup trop tard" }] },
+          { "fieldId": "existant", "status": "obtenu", "valeur": "Un fichier Excel par conducteur de travaux, consolidé à la main en fin de mois", "items": [{ "nom": "Excel", "details": "un fichier par conducteur, 3 jours de consolidation mensuelle", "attributs": [] }], "preuves": [{ "segmentId": "S7", "citation": "en fin de mois on passe trois jours à consolider pour savoir où on en est" }] },
+          { "fieldId": "type_projet", "status": "obtenu", "valeur": "Application métier sur mesure de pilotage des chantiers", "items": [], "preuves": [{ "segmentId": "S9", "citation": "On voudrait une application métier sur mesure pour piloter nos chantiers" }] },
+          { "fieldId": "objectifs", "status": "partiel", "valeur": "Centraliser le suivi des chantiers et détecter les dérapages de marge plus tôt", "items": [{ "nom": "Centraliser le suivi des chantiers", "details": "", "attributs": [] }, { "nom": "Détecter les dérapages de marge plus tôt", "details": "", "attributs": [] }], "preuves": [{ "segmentId": "S9", "citation": "pour piloter nos chantiers" }, { "segmentId": "S7", "citation": "on découvre les dérapages de marge beaucoup trop tard" }] },
+          { "fieldId": "concurrence", "status": "partiel", "valeur": "Logiciels BTP du marché étudiés, jugés trop lourds", "items": [], "preuves": [{ "segmentId": "S9", "citation": "les logiciels BTP du marché qu'on a regardés sont trop lourds" }] }
+        ],
+        "typeProjet": "app-metier",
+        "typeProjetPreuve": { "segmentId": "S9", "citation": "une application métier sur mesure pour piloter nos chantiers" },
+        "resume": "Ternovia (travaux publics, 85 salariés) veut une application sur mesure pour piloter ses chantiers, aujourd'hui suivis sur Excel.",
+        "questionsSuggerees": [{ "fieldId": "entites", "question": "Concrètement, qu'est-ce que vous suivez pour chaque chantier ?" }, { "fieldId": "roles", "question": "Qui utiliserait l'outil au quotidien ?" }]
+      }
+    },
+    {
+      "apresSegment": 11,
+      "patch": {
+        "updates": [
+          { "fieldId": "entites", "status": "obtenu", "valeur": "Chantier : client, adresse, conducteur, dates, montant du marché, avancement, budget consommé vs prévu", "items": [{ "nom": "Chantier", "details": "objet central", "attributs": ["client", "adresse", "conducteur de travaux", "date de début", "date de fin prévue", "montant du marché", "avancement en pourcentage", "budget prévu", "budget consommé"] }], "preuves": [{ "segmentId": "S11", "citation": "Pour chaque chantier on suit le client, l'adresse, le conducteur de travaux, la date de début, la date de fin prévue" }, { "segmentId": "S11", "citation": "le budget consommé par rapport au budget prévu" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "modules", "question": "Au-delà des chantiers, les équipes et le matériel doivent-ils être suivis dans l'outil ?" }]
+      }
+    },
+    {
+      "apresSegment": 15,
+      "patch": {
+        "updates": [
+          { "fieldId": "entites", "status": "obtenu", "valeur": "Chantiers, pointages d'heures par chantier, engins affectés aux chantiers", "items": [{ "nom": "Chantier", "details": "objet central", "attributs": ["client", "adresse", "conducteur de travaux", "date de début", "date de fin prévue", "montant du marché", "avancement en pourcentage", "budget prévu", "budget consommé"] }, { "nom": "Pointage", "details": "heures pointées par les chefs d'équipe, par chantier", "attributs": ["chef d'équipe", "chantier", "date", "heures"] }, { "nom": "Engin", "details": "pelles, camions, compacteurs", "attributs": ["type", "chantier affecté"] }], "preuves": [{ "segmentId": "S13", "citation": "On voudrait qu'ils pointent les heures par chantier directement sur tablette" }, { "segmentId": "S13", "citation": "pouvoir affecter les engins aux chantiers, les pelles, les camions, les compacteurs" }] },
+          { "fieldId": "modules", "status": "obtenu", "valeur": "Suivi des chantiers, pointage des heures sur tablette, affectation des engins", "items": [{ "nom": "Suivi des chantiers", "details": "", "attributs": [] }, { "nom": "Pointage des heures", "details": "sur tablette", "attributs": [] }, { "nom": "Affectation des engins", "details": "", "attributs": [] }], "preuves": [{ "segmentId": "S13", "citation": "c'est le deuxième gros sujet" }, { "segmentId": "S13", "citation": "pointent les heures par chantier directement sur tablette" }] },
+          { "fieldId": "processus", "status": "partiel", "valeur": "Pointage des heures : aujourd'hui papier puis ressaisie, demain saisie sur tablette par chantier", "items": [{ "nom": "Pointage des heures", "details": "papier + ressaisie aujourd'hui, tablette demain", "attributs": [] }], "preuves": [{ "segmentId": "S13", "citation": "Les chefs d'équipe font le pointage des heures sur papier, on ressaisit tout" }] },
+          { "fieldId": "acces", "status": "obtenu", "valeur": "Tablette sur le terrain (chefs d'équipe, conducteurs), poste de bureau (administratif, direction), parfois sans réseau", "items": [], "preuves": [{ "segmentId": "S15", "citation": "sur tablette pour les chefs d'équipe et les conducteurs, et au bureau pour l'administratif et la direction" }, { "segmentId": "S15", "citation": "Parfois sans réseau sur les chantiers" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "ecrans_prioritaires", "question": "S'il ne devait y avoir qu'un écran, lequel serait le plus important pour vous ?" }]
+      }
+    },
+    {
+      "apresSegment": 18,
+      "patch": {
+        "updates": [
+          { "fieldId": "ecrans_prioritaires", "status": "obtenu", "valeur": "Tableau de bord des marges et chantiers en dérive (direction) ; planning hebdomadaire des équipes et des engins (travaux)", "items": [{ "nom": "Tableau de bord marges et chantiers en dérive", "details": "budget consommé supérieur à l'avancement", "attributs": [] }, { "nom": "Planning des équipes et des engins sur la semaine", "details": "qui est où, ce qui est disponible", "attributs": [] }], "preuves": [{ "segmentId": "S17", "citation": "un tableau de bord avec la marge par chantier et les chantiers en dérive" }, { "segmentId": "S18", "citation": "le planning des équipes et des engins sur la semaine" }] },
+          { "fieldId": "indicateurs", "status": "obtenu", "valeur": "Marge par chantier, chantiers en dérive, chiffre d'affaires réalisé par agence", "items": [{ "nom": "Marge par chantier", "details": "", "attributs": [] }, { "nom": "Chantiers en dérive", "details": "budget consommé > avancement", "attributs": [] }, { "nom": "Chiffre d'affaires réalisé par agence", "details": "", "attributs": [] }], "preuves": [{ "segmentId": "S17", "citation": "les chantiers où le budget consommé dépasse l'avancement" }, { "segmentId": "S17", "citation": "Et le chiffre d'affaires réalisé par agence" }] },
+          { "fieldId": "objectifs", "status": "obtenu", "valeur": "Centraliser le suivi des chantiers, détecter les dérives tôt, supprimer la ressaisie des heures, savoir qui est où", "items": [{ "nom": "Centraliser le suivi des chantiers", "details": "", "attributs": [] }, { "nom": "Détecter les dérapages de marge plus tôt", "details": "", "attributs": [] }, { "nom": "Supprimer la ressaisie des heures", "details": "", "attributs": [] }, { "nom": "Savoir qui est où et ce qui est disponible", "details": "", "attributs": [] }], "preuves": [{ "segmentId": "S18", "citation": "pour savoir qui est où et ce qui est disponible" }, { "segmentId": "S13", "citation": "on ressaisit tout" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "volume_utilisateurs", "question": "Combien de personnes utiliseraient l'outil, et avec quels profils ?" }]
+      }
+    },
+    {
+      "apresSegment": 22,
+      "patch": {
+        "updates": [
+          { "fieldId": "roles", "status": "obtenu", "valeur": "Direction, conducteurs de travaux, chefs d'équipe, service administratif", "items": [{ "nom": "Direction", "details": "3 personnes", "attributs": ["suivre les marges et les chantiers en dérive"] }, { "nom": "Conducteur de travaux", "details": "12 personnes", "attributs": ["suivre ses chantiers"] }, { "nom": "Chef d'équipe", "details": "une vingtaine", "attributs": ["pointer les heures sur tablette"] }, { "nom": "Service administratif", "details": "4 personnes", "attributs": ["facturation", "situations de travaux"] }], "preuves": [{ "segmentId": "S20", "citation": "Il y aurait la direction, donc trois personnes, les douze conducteurs de travaux, une vingtaine de chefs d'équipe" }, { "segmentId": "S20", "citation": "le service administratif, quatre personnes, pour la facturation et les situations de travaux" }] },
+          { "fieldId": "volume_utilisateurs", "status": "obtenu", "valeur": "3 en direction, 12 conducteurs de travaux, une vingtaine de chefs d'équipe, 4 administratifs", "items": [], "preuves": [{ "segmentId": "S20", "citation": "les douze conducteurs de travaux, une vingtaine de chefs d'équipe" }] },
+          { "fieldId": "modules", "status": "obtenu", "valeur": "Suivi des chantiers, pointage des heures, affectation des engins, situations de travaux mensuelles", "items": [{ "nom": "Suivi des chantiers", "details": "", "attributs": [] }, { "nom": "Pointage des heures", "details": "sur tablette", "attributs": [] }, { "nom": "Affectation des engins", "details": "", "attributs": [] }, { "nom": "Situations de travaux", "details": "mensuelles, export vers Sage", "attributs": [] }], "preuves": [{ "segmentId": "S22", "citation": "préparer les situations de travaux mensuelles dans l'outil" }] },
+          { "fieldId": "processus", "status": "obtenu", "valeur": "Pointage des heures sur tablette par chantier ; situations de travaux mensuelles avec % d'avancement puis export vers Sage", "items": [{ "nom": "Pointage des heures", "details": "papier + ressaisie aujourd'hui, tablette demain", "attributs": [] }, { "nom": "Situation de travaux mensuelle", "details": "pourcentage d'avancement, puis export vers Sage", "attributs": [] }], "preuves": [{ "segmentId": "S22", "citation": "avec le pourcentage d'avancement, et ensuite les exporter vers Sage" }] },
+          { "fieldId": "entites", "status": "obtenu", "valeur": "Chantiers, pointages, engins, situations de travaux", "items": [{ "nom": "Chantier", "details": "objet central", "attributs": ["client", "adresse", "conducteur de travaux", "date de début", "date de fin prévue", "montant du marché", "avancement en pourcentage", "budget prévu", "budget consommé"] }, { "nom": "Pointage", "details": "heures pointées par les chefs d'équipe, par chantier", "attributs": ["chef d'équipe", "chantier", "date", "heures"] }, { "nom": "Engin", "details": "pelles, camions, compacteurs", "attributs": ["type", "chantier affecté"] }, { "nom": "Situation de travaux", "details": "mensuelle", "attributs": ["chantier", "mois", "pourcentage d'avancement"] }], "preuves": [{ "segmentId": "S22", "citation": "préparer les situations de travaux mensuelles dans l'outil, avec le pourcentage d'avancement" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "integrations", "question": "En dehors de Sage, l'outil doit-il échanger avec d'autres logiciels ?" }]
+      }
+    },
+    {
+      "apresSegment": 24,
+      "patch": {
+        "updates": [
+          { "fieldId": "integrations", "status": "obtenu", "valeur": "Sage (comptabilité, export des situations) ; paie externalisée (heures pointées, secondaire)", "items": [{ "nom": "Sage", "details": "comptabilité, export des situations de travaux", "attributs": [] }, { "nom": "Prestataire de paie", "details": "envoi des heures pointées, secondaire", "attributs": [] }], "preuves": [{ "segmentId": "S22", "citation": "les exporter vers Sage, notre logiciel de comptabilité" }, { "segmentId": "S24", "citation": "La paie, qui est chez un prestataire, ce serait bien d'envoyer les heures pointées" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "delai", "question": "Pour quand auriez-vous besoin d'une première version ?" }, { "fieldId": "budget", "question": "Avez-vous une enveloppe budgétaire en tête ?" }]
+      }
+    },
+    {
+      "apresSegment": 26,
+      "patch": {
+        "updates": [
+          { "fieldId": "delai", "status": "obtenu", "valeur": "Agence pilote en mars, généralisation aux trois agences avant l'été (haute saison)", "items": [], "preuves": [{ "segmentId": "S26", "citation": "démarrer avec une agence pilote en mars, et généraliser aux trois agences avant l'été" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "budget", "question": "Avez-vous une enveloppe budgétaire en tête ?" }]
+      }
+    },
+    {
+      "apresSegment": 28,
+      "patch": {
+        "updates": [
+          { "fieldId": "budget", "status": "obtenu", "valeur": "Enveloppe validée de 60 à 90 k€ pour la première phase, maintenance en sus", "items": [], "preuves": [{ "segmentId": "S28", "citation": "On a validé une enveloppe entre soixante et quatre-vingt-dix mille euros pour la première phase" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "decideurs", "question": "Qui participera à la décision, et comment allez-vous choisir ?" }]
+      }
+    },
+    {
+      "apresSegment": 30,
+      "patch": {
+        "updates": [
+          { "fieldId": "decideurs", "status": "obtenu", "valeur": "Présentation au comité de direction, décision finale du PDG Jean-Pierre Hamon", "items": [], "preuves": [{ "segmentId": "S30", "citation": "On présentera les propositions au comité de direction, c'est notre PDG, Jean-Pierre Hamon, qui tranche" }] },
+          { "fieldId": "concurrence", "status": "obtenu", "valeur": "Un éditeur de logiciel BTP et une autre agence de développement", "items": [], "preuves": [{ "segmentId": "S30", "citation": "On consulte aussi un éditeur de logiciel BTP et une autre agence de développement" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "criteres", "question": "Sur quels critères allez-vous choisir votre prestataire ?" }]
+      }
+    },
+    {
+      "apresSegment": 32,
+      "patch": {
+        "updates": [
+          { "fieldId": "criteres", "status": "obtenu", "valeur": "1. Simplicité pour le terrain, 2. prix, 3. évolutivité", "items": [{ "nom": "Simplicité pour le terrain", "details": "critère numéro un", "attributs": [] }, { "nom": "Prix", "details": "", "attributs": [] }, { "nom": "Capacité à faire évoluer l'outil", "details": "", "attributs": [] }], "preuves": [{ "segmentId": "S32", "citation": "La simplicité pour le terrain, c'est le critère numéro un" }, { "segmentId": "S32", "citation": "Ensuite le prix, et la capacité à faire évoluer l'outil" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "contraintes", "question": "Avez-vous des contraintes d'hébergement, de sécurité ou de connexion ?" }]
+      }
+    },
+    {
+      "apresSegment": 34,
+      "patch": {
+        "updates": [
+          { "fieldId": "contraintes", "status": "obtenu", "valeur": "Mode hors ligne sur tablette, hébergement en France", "items": [{ "nom": "Mode hors ligne sur tablette", "details": "", "attributs": [] }, { "nom": "Hébergement en France", "details": "", "attributs": [] }], "preuves": [{ "segmentId": "S34", "citation": "le mode hors ligne sur tablette, et que ce soit hébergé en France" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null, "resume": "",
+        "questionsSuggerees": [{ "fieldId": "reprise_donnees", "question": "Faudra-t-il reprendre l'historique des fichiers Excel ?" }, { "fieldId": "prochaine_etape", "question": "On cale ensemble la prochaine étape ?" }]
+      }
+    },
+    {
+      "apresSegment": 36,
+      "patch": {
+        "updates": [
+          { "fieldId": "prochaine_etape", "status": "obtenu", "valeur": "Second rendez-vous fin novembre avec le PDG pour présenter une proposition détaillée", "items": [], "preuves": [{ "segmentId": "S36", "citation": "On pourrait faire le second rendez-vous fin novembre, avec Jean-Pierre si possible" }] }
+        ],
+        "typeProjet": "", "typeProjetPreuve": null,
+        "resume": "Ternovia (travaux publics, 85 salariés, 3 agences) veut une application sur mesure pour piloter ses chantiers (marges, dérives), le pointage des heures sur tablette, l'affectation des engins et les situations de travaux exportées vers Sage. Budget 60-90 k€, pilote en mars.",
+        "questionsSuggerees": [{ "fieldId": "reprise_donnees", "question": "Faudra-t-il reprendre l'historique des fichiers Excel ?" }]
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "titre": "Espace de gestion",
+  "sousTitre": "Maquette de démonstration",
+  "typeProjet": "app-metier",
+  "roles": [
+    { "id": "admin", "label": "Administrateur" },
+    { "id": "equipe", "label": "Équipe" }
+  ],
+  "roleParDefaut": "admin",
+  "utilisateur": { "nom": "Camille Martin", "poste": "Responsable" },
+  "navigation": [
+    { "id": "accueil", "label": "Tableau de bord", "icone": "dashboard", "type": "tableau-de-bord" },
+    { "id": "dossiers", "label": "Dossiers", "icone": "folder", "type": "entite", "cible": "dossier" }
+  ],
+  "tableauDeBord": {
+    "titre": "Tableau de bord",
+    "intro": "Vue d'ensemble de l'activité",
+    "kpis": [
+      { "label": "Dossiers ouverts", "valeur": 42, "format": "nombre", "evolution": 8 },
+      { "label": "Montant engagé", "valeur": 184500, "format": "euro", "evolution": 12 },
+      { "label": "Taux de réalisation", "valeur": 76, "format": "pourcent", "evolution": -3 },
+      { "label": "Retards", "valeur": 3, "format": "nombre", "evolution": -25 }
+    ],
+    "graphiques": [
+      { "titre": "Dossiers par mois", "type": "barres", "donnees": [
+        { "label": "Jan", "valeur": 12 }, { "label": "Fév", "valeur": 15 }, { "label": "Mar", "valeur": 11 },
+        { "label": "Avr", "valeur": 18 }, { "label": "Mai", "valeur": 21 }, { "label": "Juin", "valeur": 19 }
+      ] },
+      { "titre": "Répartition par statut", "type": "donut", "donnees": [
+        { "label": "En cours", "valeur": 18 }, { "label": "À valider", "valeur": 9 }, { "label": "Terminé", "valeur": 15 }
+      ] }
+    ],
+    "listes": [{ "titre": "Derniers dossiers", "entite": "dossier", "limite": 5 }]
+  },
+  "entites": [
+    {
+      "id": "dossier",
+      "label": "Dossier",
+      "labelPluriel": "Dossiers",
+      "icone": "folder",
+      "champs": [
+        { "id": "reference", "label": "Référence", "type": "texte" },
+        { "id": "client", "label": "Client", "type": "texte" },
+        { "id": "responsable", "label": "Responsable", "type": "personne" },
+        { "id": "date", "label": "Date", "type": "date" },
+        { "id": "montant", "label": "Montant", "type": "euro" },
+        { "id": "statut", "label": "Statut", "type": "statut", "options": ["À valider", "En cours", "Terminé"], "couleurs": { "À valider": "orange", "En cours": "bleu", "Terminé": "vert" } }
+      ],
+      "champTitre": "reference",
+      "champStatut": "statut",
+      "champDate": "date",
+      "vues": ["liste", "kanban", "calendrier"],
+      "donnees": [
+        { "id": "1", "reference": "DOS-2026-001", "client": "Durand & Fils", "responsable": "Julie Bernard", "date": "2026-11-03", "montant": 12500, "statut": "En cours" },
+        { "id": "2", "reference": "DOS-2026-002", "client": "Atelier Moreau", "responsable": "Thomas Petit", "date": "2026-11-07", "montant": 8200, "statut": "À valider" },
+        { "id": "3", "reference": "DOS-2026-003", "client": "SARL Lefèvre", "responsable": "Julie Bernard", "date": "2026-11-12", "montant": 23400, "statut": "Terminé" }
+      ]
+    }
+  ]
+}

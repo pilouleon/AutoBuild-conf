@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+/* Couleurs de la marque du prospect : définies au démarrage par src/lib/theme.ts à partir de brand.json. */
+:root {
+  --brand-primary: #2563eb;
+  --brand-primary-fg: #ffffff;
+  --brand-secondary: #0f172a;
+  --brand-secondary-fg: #ffffff;
+  --brand-accent: #2563eb;
+  --brand-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+@theme inline {
+  --color-primary: var(--brand-primary);
+  --color-primary-fg: var(--brand-primary-fg);
+  --color-secondary: var(--brand-secondary);
+  --color-secondary-fg: var(--brand-secondary-fg);
+  --color-accent: var(--brand-accent);
+  --font-brand: var(--brand-font);
+}
+
+body {
+  margin: 0;
+  font-family: var(--brand-font);
+  -webkit-font-smoothing: antialiased;
+}

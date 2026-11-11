@@ -1,0 +1,14 @@
+{
+  "id": "socle",
+  "name": "Socle générique",
+  "version": "0.1.0",
+  "description": "Base générique pilotée par src/mockup/app.json : connexion à la marque du prospect, tableau de bord, listes, kanban, fiches. Sert de repli pour tous les types de projet tant que les templates métier ne sont pas créés.",
+  "projectTypes": ["*"],
+  "fallback": true,
+  "stack": "Vite + React + TypeScript + Tailwind CSS 4",
+  "dev": { "script": "node_modules/vite/bin/vite.js", "args": ["--port", "{port}", "--strictPort", "--host", "127.0.0.1"] },
+  "check": { "script": "node_modules/typescript/bin/tsc", "args": ["--noEmit", "-p", "tsconfig.json"] },
+  "mockupDir": "src/mockup",
+  "brandAssetsDir": "public/brand",
+  "routes": "navigation de src/mockup/app.json (#/<id>)"
+}

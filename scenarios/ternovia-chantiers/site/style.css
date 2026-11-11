@@ -1,0 +1,10 @@
+:root { --primary-color: #E4572E; --secondary-color: #1D3557; --light: #F6F4F1; }
+body { margin: 0; font-family: 'Montserrat', Arial, sans-serif; color: #1D3557; background: #fff; }
+header { display: flex; justify-content: space-between; align-items: center; padding: 18px 48px; background: #fff; border-bottom: 1px solid #eee; }
+nav a { margin-left: 24px; color: var(--secondary-color); text-decoration: none; font-weight: 600; }
+nav a:hover { color: var(--primary-color); }
+.hero { background: var(--secondary-color); color: #fff; padding: 96px 48px; }
+.btn-primary { background: var(--primary-color); color: #fff; padding: 12px 24px; border-radius: 6px; border: 0; }
+.services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 64px 48px; background: var(--light); }
+.card h3 { color: var(--primary-color); }
+footer { background: #13233a; color: #cbd5e1; padding: 32px 48px; }
