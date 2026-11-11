@@ -7,6 +7,7 @@ import type { Settings } from '@shared/types'
 export function defaultSettings(): Settings {
   return {
     briefProvider: 'claude',
+    claude: { mode: 'api', cliPath: '' },
     transcriptionMode: 'tronçons',
     models: {
       geminiTranscription: 'gemini-3.8-flash',
@@ -33,6 +34,7 @@ export function mergeSettings(saved: Partial<Settings> | undefined): Settings {
     ...d,
     ...saved,
     models: { ...d.models, ...saved.models },
+    claude: { ...d.claude, ...saved.claude },
     audio: { ...d.audio, ...saved.audio },
     agence: { ...d.agence, ...saved.agence },
     generation: { ...d.generation, ...saved.generation }

@@ -21,20 +21,24 @@ extraResources:
   - from: scenarios
     to: scenarios
 mac:
-  target:
-    - target: dmg
-      arch: [arm64]
+  target: dmg
   category: public.app-category.business
-  identity: null
+  # Signature « ad hoc » (sans certificat Apple) : indispensable pour lancer l'app sur Mac Apple Silicon.
+  identity: '-'
+  hardenedRuntime: false
+  icon: build/icon.png
   extendInfo:
     NSMicrophoneUsageDescription: AutoBuild transcrit votre voix pendant le rendez-vous pour remplir le brief.
     NSAudioCaptureUsageDescription: AutoBuild capte le son de la visio (la voix du prospect) pour la transcription.
 win:
+  icon: build/icon.png
   target:
     - target: nsis
       arch: [x64]
 nsis:
   oneClick: false
+  createDesktopShortcut: always
+  shortcutName: AutoBuild
   perMachine: false
   allowToChangeInstallationDirectory: true
   artifactName: AutoBuild-Setup-${version}.${ext}

@@ -7,6 +7,7 @@ import { GoogleGenAI } from '@google/genai'
 import { BrowserWindow, app, desktopCapturer, dialog, ipcMain, nativeImage, session as electronSession, shell } from 'electron'
 import { briefToMarkdown } from '@shared/brief/export'
 import type { SessionState, Settings, Speaker } from '@shared/types'
+import { claudeStructured, claudeVersion, findClaudeCli } from './claude-code/cli'
 import { killAllChildren } from './generator/node-runner'
 import { toInfo } from './generator/templates'
 import { Session } from './session'
@@ -120,17 +121,37 @@ function registerIpc(): void {
   ipcMain.handle('state:get', () => session.state)
   ipcMain.handle('settings:get', () => store.get())
   ipcMain.handle('settings:save', (_e, s: Settings) => store.save(s))
-  const keysStatus = () => ({ ...session.keysStatus(), chiffrement: store.encryptionAvailable() })
+  const keysStatus = async () => ({ ...(await session.keysStatus()), chiffrement: store.encryptionAvailable() })
   ipcMain.handle('keys:status', keysStatus)
   ipcMain.handle('keys:set', (_e, name: 'anthropic' | 'gemini', value: string) => {
     store.setKey(name, value)
     return keysStatus()
   })
+  ipcMain.handle('claude-code:test', async () => {
+    const cli = await session.refreshClaudeCli().then((c) => c ?? findClaudeCli(store.get().claude.cliPath))
+    if (!cli) return { ok: false, message: 'Claude Code introuvable. Installez-le (voir le guide), ou indiquez le chemin de « claude » dans les réglages.' }
+    const version = await claudeVersion(cli)
+    try {
+      const { data } = await claudeStructured<{ reponse: string }>({
+        cli,
+        model: store.get().models.claudeBrief,
+        system: 'Tu réponds au test de connexion d’une application.',
+        prompt: 'Réponds « OK ».',
+        schema: { type: 'object', properties: { reponse: { type: 'string' } }, required: ['reponse'], additionalProperties: false },
+        cwd: app.getPath('userData'),
+        timeoutMs: 90_000,
+        effort: 'low'
+      })
+      return { ok: true, message: `Connecté (${version ?? 'version inconnue'}) : « ${data.reponse} »`, path: cli.path }
+    } catch (err) {
+      return { ok: false, message: `${(err as Error).message}${version ? ` (${version})` : ''}`, path: cli.path }
+    }
+  })
   ipcMain.handle('keys:test', async () => {
     const k = store.getKeys()
     const s = store.get()
     const out: { anthropic?: string; gemini?: string } = {}
-    if (k.anthropic) {
+    if (k.anthropic && s.claude.mode === 'api') {
       try {
         const m = await new Anthropic({ apiKey: k.anthropic }).models.retrieve(s.models.claudeBrief)
         out.anthropic = `OK (${m.display_name})`
@@ -163,6 +184,7 @@ function registerIpc(): void {
     return session.reset()
   })
   ipcMain.handle('session:speed', (_e, n: number) => session.setSimulationSpeed(n))
+  ipcMain.handle('session:brief-mode', (_e, rejoue: boolean) => session.setSimulationBriefMode(rejoue))
   ipcMain.handle('session:consent', (_e, v: boolean) => session.setConsent(v))
   ipcMain.handle('brief:manual', (_e, id: string, v: string) => session.setManual(id, v))
   ipcMain.handle('brief:run', () => session.runBrief(true))

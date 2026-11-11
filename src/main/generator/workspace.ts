@@ -3,6 +3,7 @@
 // Les instantanés ne concernent que les dossiers modifiables (src, public) : c'est rapide.
 
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join, relative, sep } from 'node:path'
 import type { LoadedTemplate } from './templates'
 
@@ -34,6 +35,15 @@ export class Workspace {
     })
     const ws = new Workspace(dir, template)
     mkdirSync(ws.snapDir, { recursive: true })
+    // macOS : les fichiers copiés depuis une application téléchargée gardent l'attribut de quarantaine,
+    // qui peut bloquer les binaires natifs (Vite, Tailwind, TypeScript). On le retire de la maquette.
+    if (process.platform === 'darwin') {
+      try {
+        execFileSync('xattr', ['-dr', 'com.apple.quarantine', dir], { stdio: 'ignore' })
+      } catch {
+        /* attribut absent */
+      }
+    }
     return ws
   }
 

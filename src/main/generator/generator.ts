@@ -13,6 +13,7 @@ import type { Brief } from '@shared/brief/schema'
 import { buildAppConfig, slugify } from '@shared/mockup/baseline'
 import type { AppConfig, MockupAgence, MockupBrand } from '@shared/mockup/types'
 import type { AgencySignature, Brand, GenerationState, GenerationStep, StepStatus } from '@shared/types'
+import type { ClaudeCli } from '../claude-code/cli'
 import { runAgent } from './agent'
 import { runNode } from './node-runner'
 import { PreviewServer } from './preview'
@@ -23,9 +24,19 @@ import { Workspace } from './workspace'
 export interface GeneratorDeps {
   templates: () => LoadedTemplate[]
   workspacesDir: () => string
-  agentConfig: () => { enabled: boolean; apiKey?: string; model: string; effort: 'low' | 'medium' | 'high'; maxMinutes: number }
+  agentConfig: () => AgentConfig
   log: (msg: string, level?: 'info' | 'warn' | 'error' | 'success') => void
   onState: (s: GenerationState) => void
+}
+
+export interface AgentConfig {
+  enabled: boolean
+  backend: 'api' | 'claude-code'
+  apiKey?: string
+  cli?: ClaudeCli
+  model: string
+  effort: 'low' | 'medium' | 'high'
+  maxMinutes: number
 }
 
 export interface PrepareInput {
@@ -182,7 +193,7 @@ export class Generator {
 
   private agentAvailable(): boolean {
     const c = this.deps.agentConfig()
-    return c.enabled && !!c.apiKey && this.agentFailures < 2
+    return c.enabled && (c.backend === 'api' ? !!c.apiKey : !!c.cli) && this.agentFailures < 2
   }
 
   private agentFailed(message: string): void {
@@ -230,7 +241,8 @@ export class Generator {
   private async runAgentStep(kind: AgentStepKind): Promise<void> {
     const ws = this.ws
     const cfg = this.deps.agentConfig()
-    if (!ws || !this.brief || !this.brand || !cfg.apiKey) return
+    if (!ws || !this.brief || !this.brand || (cfg.backend === 'api' ? !cfg.apiKey : !cfg.cli)) return
+    const engine = { backend: cfg.backend, apiKey: cfg.apiKey, cli: cfg.cli, model: cfg.model }
     const labels: Record<AgentStepKind, string> = {
       structure: this.agentSteps === 0 ? 'IA : maquette sur mesure' : 'IA : intégration des nouvelles infos',
       donnees: 'IA : données réalistes du secteur',
@@ -251,12 +263,12 @@ export class Generator {
       this.state.activity = t
       this.emit()
     }
-    let res = await runAgent({ apiKey: cfg.apiKey, model: cfg.model, effort: kind === 'finition' ? cfg.effort : cfg.effort === 'high' ? 'medium' : cfg.effort, cwd: ws.dir, prompt: agentPrompt(kind, ctx), timeoutMs: minutes * 60_000, onActivity, signal: this.abort.signal })
+    let res = await runAgent({ ...engine, effort: kind === 'finition' ? cfg.effort : cfg.effort === 'high' ? 'medium' : cfg.effort, cwd: ws.dir, prompt: agentPrompt(kind, ctx), timeoutMs: minutes * 60_000, onActivity, signal: this.abort.signal })
     if (this.stopped) return this.endStep(step, 'annule')
     let check = await this.check()
     if (res.filesTouched.length && !check.ok) {
       this.deps.log(`Compilation en échec après l'étape IA, tentative de correction…`, 'warn')
-      res = await runAgent({ apiKey: cfg.apiKey, model: cfg.model, effort: 'low', cwd: ws.dir, prompt: agentPrompt('correction', { ...ctx, checkErrors: check.output }), timeoutMs: 120_000, onActivity, signal: this.abort.signal })
+      res = await runAgent({ ...engine, effort: 'low', cwd: ws.dir, prompt: agentPrompt('correction', { ...ctx, checkErrors: check.output }), timeoutMs: 120_000, onActivity, signal: this.abort.signal })
       check = await this.check()
     }
     if (!check.ok) {

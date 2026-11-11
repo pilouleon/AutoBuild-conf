@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
 import { GoogleGenAI } from '@google/genai'
 import { z } from 'zod'
+import { type ClaudeCli, claudeStructured } from '../claude-code/cli'
 import type { SiteAnalysis } from './extract'
 
 const AnalysisSchema = z.object({
@@ -43,5 +44,22 @@ export function geminiSiteAnalyzer(apiKey: string, model: string) {
       config: { responseMimeType: 'application/json', responseJsonSchema: schema, temperature: 0.2 }
     })
     return AnalysisSchema.parse(JSON.parse(res.text ?? '{}'))
+  }
+}
+
+export function claudeCodeSiteAnalyzer(cli: ClaudeCli, model: string, cwd: string) {
+  const schema = z.toJSONSchema(AnalysisSchema) as Record<string, unknown>
+  return async (siteText: string, nom: string): Promise<SiteAnalysis> => {
+    const { data } = await claudeStructured<unknown>({
+      cli,
+      model,
+      effort: 'low',
+      system: 'Tu analyses le site web d’une entreprise pour préparer un rendez-vous commercial. Réponds uniquement avec l’objet JSON demandé.',
+      prompt: prompt(siteText, nom),
+      schema,
+      cwd,
+      timeoutMs: 90_000
+    })
+    return AnalysisSchema.parse(data)
   }
 }

@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { briefSystemPrompt, briefUserInstruction, formatSegments } from '@shared/brief/prompt'
 import { type Brief, type BriefPatch, BriefPatchSchema } from '@shared/brief/schema'
 import type { TranscriptSegment } from '@shared/types'
+import { type ClaudeCli, claudeStructured } from '../claude-code/cli'
 import type { Scenario } from '../transcription/scenario'
 
 export interface BriefInput {
@@ -104,6 +105,36 @@ export class GeminiBriefProvider implements BriefProviderImpl {
     const text = res.text
     if (!text) throw new Error('Réponse vide de Gemini.')
     return BriefPatchSchema.parse(JSON.parse(text))
+  }
+}
+
+/** Brief par le Claude Code installé sur le poste (abonnement de l'utilisateur). */
+export class ClaudeCodeBriefProvider implements BriefProviderImpl {
+  readonly name: string
+  private schema = z.toJSONSchema(BriefPatchSchema) as Record<string, unknown>
+
+  constructor(
+    private cli: ClaudeCli,
+    private model: string,
+    private effort: 'low' | 'medium' | 'high',
+    private cwd: string
+  ) {
+    this.name = `Claude Code (${model})`
+  }
+
+  async update(input: BriefInput, signal?: AbortSignal): Promise<BriefPatch> {
+    const { data } = await claudeStructured<unknown>({
+      cli: this.cli,
+      model: this.model,
+      effort: this.effort,
+      system: SYSTEM,
+      prompt: `TRANSCRIPTION\n${formatSegments(input.segments)}\n\n${briefUserInstruction(input.brief, input.newSegmentIds)}`,
+      schema: this.schema,
+      cwd: this.cwd,
+      timeoutMs: 180_000,
+      signal
+    })
+    return BriefPatchSchema.parse(data)
   }
 }
 

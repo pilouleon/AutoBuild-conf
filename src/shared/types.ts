@@ -99,7 +99,7 @@ export interface SessionState {
   transcription: { mode: TranscriptionMode; status: 'arret' | 'actif' | 'erreur' | 'simulation'; error?: string; levels: Record<Speaker, number> }
   generation: GenerationState
   logs: LogEntry[]
-  simulation?: { scenarioId: string; speed: number }
+  simulation?: { scenarioId: string; speed: number; briefRejoue?: boolean }
 }
 
 export type TranscriptionMode = 'tronçons' | 'live'
@@ -107,6 +107,8 @@ export type BriefProvider = 'claude' | 'gemini' | 'scenario'
 
 export interface Settings {
   briefProvider: Exclude<BriefProvider, 'scenario'>
+  /** Comment accéder à Claude : clé API Anthropic, ou Claude Code installé sur le poste (abonnement). */
+  claude: { mode: 'api' | 'claude-code'; cliPath: string }
   transcriptionMode: TranscriptionMode
   models: {
     geminiTranscription: string
@@ -133,6 +135,10 @@ export interface Settings {
 export interface KeysStatus {
   anthropic: boolean
   gemini: boolean
+  /** Claude utilisable (clé API ou Claude Code selon le mode choisi). */
+  claude: boolean
+  claudeMode: 'api' | 'claude-code'
+  claudeCodePath?: string
 }
 
 export interface ScenarioInfo {

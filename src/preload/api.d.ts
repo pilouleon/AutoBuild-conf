@@ -9,6 +9,7 @@ export interface AutoBuildApi {
   getKeysStatus(): Promise<KeysStatus & { chiffrement: boolean }>
   setKey(name: 'anthropic' | 'gemini', value: string): Promise<KeysStatus & { chiffrement: boolean }>
   testKeys(): Promise<{ anthropic?: string; gemini?: string }>
+  testClaudeCode(): Promise<{ ok: boolean; message: string; path?: string }>
 
   listScenarios(): Promise<ScenarioInfo[]>
   listTemplates(): Promise<TemplateInfo[]>
@@ -20,6 +21,7 @@ export interface AutoBuildApi {
   finalize(): Promise<void>
   reset(): Promise<void>
   setSpeed(speed: number): Promise<void>
+  setBriefMode(rejoue: boolean): Promise<void>
   setConsent(v: boolean): Promise<void>
   setManual(fieldId: string, valeur: string): Promise<void>
   rollback(target: 'planB' | 'lastGood'): Promise<void>

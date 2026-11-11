@@ -31,7 +31,7 @@ function makeGenerator() {
   const gen = new Generator({
     templates: () => listTemplates(join(root, 'templates')),
     workspacesDir: () => mkdtempSync(join(tmpdir(), 'gen-test-')),
-    agentConfig: () => ({ enabled: true, apiKey: 'test', model: 'claude-opus-5-5', effort: 'low', maxMinutes: 1 }),
+    agentConfig: () => ({ enabled: true, backend: 'api' as const, apiKey: 'test', model: 'claude-opus-5-5', effort: 'low', maxMinutes: 1 }),
     log: (m) => logs.push(m),
     onState: (s) => (state = s)
   })

@@ -9,6 +9,7 @@ export function PreparePage({ state, onSettings }: { state: SessionState; onSett
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([])
   const [scenario, setScenario] = useState('')
   const [speed, setSpeed] = useState(10)
+  const [briefIA, setBriefIA] = useState(false)
   const [templates, setTemplates] = useState<TemplateInfo[]>([])
   const [keys, setKeys] = useState<KeysStatus>()
   const busy = state.phase === 'preparation'
@@ -32,15 +33,24 @@ export function PreparePage({ state, onSettings }: { state: SessionState; onSett
             <p className="promise">Votre prospect vous parle de son projet, vous lui montrez la maquette avant de raccrocher.</p>
           </div>
 
-          {keys && (!keys.gemini || !keys.anthropic) && (
-            <div className="alert warn">
-              <span>
-                {!keys.gemini && <>Clé <b>Gemini</b> manquante : la transcription en direct est impossible. </>}
-                {!keys.anthropic && <>Clé <b>Claude</b> manquante : pas de génération sur mesure par l'IA (maquette de base uniquement). </>}
-                <button className="btn sm" style={{ marginLeft: 6 }} onClick={onSettings}>
-                  Ajouter les clés
+          {keys && (
+            <div className="card card-pad">
+              <div className="row" style={{ marginBottom: 10 }}>
+                <b className="small">Ce que vous pouvez essayer</b>
+                <span className="spacer" />
+                <button className="btn sm" onClick={onSettings}>
+                  Réglages
                 </button>
-              </span>
+              </div>
+              <div className="stack" style={{ gap: 8 }}>
+                <Capability ok label="Démo avec un faux rendez-vous" detail="Toujours disponible, sans clé ni micro." />
+                <Capability
+                  ok={keys.claude}
+                  label="IA Claude : brief et maquette sur mesure"
+                  detail={keys.claude ? (keys.claudeMode === 'claude-code' ? `Via votre Claude Code installé (${keys.claudeCodePath ?? ''})` : 'Via votre clé API Anthropic') : keys.claudeMode === 'claude-code' ? 'Claude Code introuvable : installez-le ou indiquez son chemin dans les réglages.' : 'Ajoutez une clé API, ou choisissez « Claude Code installé » dans les réglages.'}
+                />
+                <Capability ok={keys.gemini} label="Vrai rendez-vous : transcription de la visio" detail={keys.gemini ? 'Clé Gemini enregistrée.' : 'Nécessite une clé Gemini (gratuite sur aistudio.google.com).'} />
+              </div>
             </div>
           )}
           {templates.length > 0 && readyTemplates.length === 0 && (
@@ -96,10 +106,24 @@ export function PreparePage({ state, onSettings }: { state: SessionState; onSett
                 ))}
               </div>
               <span className="spacer" />
-              <button className="btn" disabled={busy || !scenario} onClick={() => void window.autobuild.prepareScenario(scenario, speed)}>
-                Lancer la démo
+              <button
+                className="btn primary"
+                disabled={busy || !scenario}
+                onClick={async () => {
+                  await window.autobuild.prepareScenario(scenario, speed)
+                  await window.autobuild.setBriefMode(!briefIA)
+                }}
+              >
+                {busy ? 'Préparation…' : 'Lancer la démo'}
               </button>
             </div>
+            {(keys?.claude || keys?.gemini) && (
+              <label className="row small" style={{ cursor: 'pointer' }}>
+                <input type="checkbox" checked={briefIA} onChange={(e) => setBriefIA(e.target.checked)} />
+                Faire remplir le brief par l'IA (plus réaliste, plus lent : choisissez ×1 ou ×2)
+              </label>
+            )}
+            {keys?.claude && <p className="small muted">La maquette sera aussi générée sur mesure par Claude pendant la démo.</p>}
           </div>
 
           <div className="card card-pad">
@@ -119,6 +143,18 @@ export function PreparePage({ state, onSettings }: { state: SessionState; onSett
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function Capability({ ok, label, detail }: { ok: boolean; label: string; detail: string }) {
+  return (
+    <div className="row" style={{ alignItems: 'flex-start' }}>
+      <span className={`badge ${ok ? 'ok' : 'warn'}`} style={{ marginTop: 1 }}>{ok ? '✓' : '—'}</span>
+      <div>
+        <div style={{ fontWeight: 500 }}>{label}</div>
+        <div className="small muted">{detail}</div>
       </div>
     </div>
   )

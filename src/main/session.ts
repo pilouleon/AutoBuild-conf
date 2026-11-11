@@ -7,9 +7,10 @@ import { applyPatch, applySiteInfo, defaultQuestions, setManualField } from '@sh
 import { emptyBrief } from '@shared/brief/schema'
 import { slugify } from '@shared/mockup/baseline'
 import type { Brand, KeysStatus, LogEntry, LogLevel, SessionState, Settings, Speaker, TranscriptSegment } from '@shared/types'
-import { claudeSiteAnalyzer, geminiSiteAnalyzer } from './brand/analyze'
+import { claudeCodeSiteAnalyzer, claudeSiteAnalyzer, geminiSiteAnalyzer } from './brand/analyze'
 import { type ExtractOptions, extractBrand } from './brand/extract'
-import { type BriefProviderImpl, ClaudeBriefProvider, GeminiBriefProvider, ScenarioBriefProvider } from './brief/providers'
+import { type BriefProviderImpl, ClaudeBriefProvider, ClaudeCodeBriefProvider, GeminiBriefProvider, ScenarioBriefProvider } from './brief/providers'
+import { type ClaudeCli, findClaudeCli } from './claude-code/cli'
 import { Generator } from './generator/generator'
 import { type LoadedTemplate, listTemplates } from './generator/templates'
 import { GeminiChunkTranscriber } from './transcription/gemini-chunks'
@@ -68,7 +69,15 @@ export class Session {
       workspacesDir: () => deps.settings().workspacesDir,
       agentConfig: () => {
         const s = deps.settings()
-        return { enabled: s.generation.agentEnabled, apiKey: deps.keys().anthropic, model: s.models.claudeGenerator, effort: s.generatorEffort, maxMinutes: s.generation.maxAgentMinutes }
+        return {
+          enabled: s.generation.agentEnabled,
+          backend: s.claude.mode,
+          apiKey: deps.keys().anthropic,
+          cli: this.cli,
+          model: s.models.claudeGenerator,
+          effort: s.generatorEffort,
+          maxMinutes: s.generation.maxAgentMinutes
+        }
       },
       log: (m, l) => this.log('generation', m, l ?? 'info'),
       onState: (g) => {
@@ -82,9 +91,28 @@ export class Session {
     return listTemplates(this.deps.templatesRoot, this.deps.settings().templatesDir || undefined)
   }
 
-  keysStatus(): KeysStatus {
+  /** Claude Code installé sur le poste (mode abonnement), détecté à la demande. */
+  private cli?: ClaudeCli
+
+  async refreshClaudeCli(): Promise<ClaudeCli | undefined> {
+    const s = this.deps.settings()
+    this.cli = s.claude.mode === 'claude-code' ? await findClaudeCli(s.claude.cliPath) : undefined
+    return this.cli
+  }
+
+  /** Accès à Claude selon le mode choisi dans les réglages. */
+  private claudeEngine(): { kind: 'api'; key: string } | { kind: 'claude-code'; cli: ClaudeCli } | undefined {
+    const s = this.deps.settings()
+    if (s.claude.mode === 'claude-code') return this.cli ? { kind: 'claude-code', cli: this.cli } : undefined
+    const key = this.deps.keys().anthropic
+    return key ? { kind: 'api', key } : undefined
+  }
+
+  async keysStatus(): Promise<KeysStatus> {
     const k = this.deps.keys()
-    return { anthropic: !!k.anthropic, gemini: !!k.gemini }
+    await this.refreshClaudeCli()
+    const s = this.deps.settings()
+    return { anthropic: !!k.anthropic, gemini: !!k.gemini, claude: !!this.claudeEngine(), claudeMode: s.claude.mode, claudeCodePath: this.cli?.path }
   }
 
   // ── État et journal ────────────────────────────────────────────
@@ -127,7 +155,11 @@ export class Session {
       try {
         const keys = this.deps.keys()
         const s = this.deps.settings()
-        const analyze = keys.anthropic && s.briefProvider === 'claude' ? claudeSiteAnalyzer(keys.anthropic, s.models.claudeBrief) : keys.gemini ? geminiSiteAnalyzer(keys.gemini, s.models.geminiBrief) : keys.anthropic ? claudeSiteAnalyzer(keys.anthropic, s.models.claudeBrief) : undefined
+        await this.refreshClaudeCli()
+        const claude = this.claudeEngine()
+        const claudeAnalyzer = claude?.kind === 'api' ? claudeSiteAnalyzer(claude.key, s.models.claudeBrief) : claude ? claudeCodeSiteAnalyzer(claude.cli, s.models.claudeBrief, this.deps.dataDir) : undefined
+        const geminiAnalyzer = keys.gemini ? geminiSiteAnalyzer(keys.gemini, s.models.geminiBrief) : undefined
+        const analyze = s.briefProvider === 'claude' ? (claudeAnalyzer ?? geminiAnalyzer) : (geminiAnalyzer ?? claudeAnalyzer)
         const res = await extractBrand(prospect.url, {
           destDir: join(this.deps.dataDir, 'marques', slugify(prospect.nom || prospect.url)),
           decodeImage: this.deps.decodeImage,
@@ -188,21 +220,18 @@ export class Session {
     this.state.phase = 'ecoute'
     this.lastBriefSegmentCount = 0
 
-    // Fournisseur du brief.
-    if (this.scenario && !(s.briefProvider === 'claude' ? keys.anthropic : keys.gemini)) {
+    // Fournisseur du brief : celui choisi, sinon l'autre, sinon (démo) les patchs rejoués du scénario.
+    await this.refreshClaudeCli()
+    const claude = this.claudeEngine()
+    const claudeProvider = claude?.kind === 'api' ? new ClaudeBriefProvider(claude.key, s.models.claudeBrief, s.briefEffort) : claude ? new ClaudeCodeBriefProvider(claude.cli, s.models.claudeBrief, s.briefEffort, this.deps.dataDir) : undefined
+    const geminiProvider = keys.gemini ? new GeminiBriefProvider(keys.gemini, s.models.geminiBrief) : undefined
+    const chosen = s.briefProvider === 'claude' ? claudeProvider : geminiProvider
+    if (this.scenario && (!chosen || this.state.simulation?.briefRejoue)) {
       this.briefProvider = new ScenarioBriefProvider(this.scenario)
-    } else if (s.briefProvider === 'claude' && keys.anthropic) {
-      this.briefProvider = new ClaudeBriefProvider(keys.anthropic, s.models.claudeBrief, s.briefEffort)
-    } else if (s.briefProvider === 'gemini' && keys.gemini) {
-      this.briefProvider = new GeminiBriefProvider(keys.gemini, s.models.geminiBrief)
-    } else if (keys.anthropic) {
-      this.briefProvider = new ClaudeBriefProvider(keys.anthropic, s.models.claudeBrief, s.briefEffort)
-    } else if (keys.gemini) {
-      this.briefProvider = new GeminiBriefProvider(keys.gemini, s.models.geminiBrief)
     } else {
-      this.briefProvider = undefined
-      this.log('brief', 'Aucune clé API : le brief ne sera pas rempli automatiquement (mode simulation uniquement).', 'warn')
+      this.briefProvider = chosen ?? claudeProvider ?? geminiProvider
     }
+    if (!this.briefProvider) this.log('brief', 'Aucun accès à Claude ni à Gemini : le brief ne sera pas rempli automatiquement (seule la démo rejouée fonctionne sans IA).', 'warn')
     this.state.briefStatus.provider = this.briefProvider?.name ?? 'aucun'
 
     // Source du texte : scénario rejoué ou audio réel.
@@ -348,6 +377,12 @@ export class Session {
 
   setSimulationSpeed(speed: number): void {
     if (this.state.simulation) this.state.simulation.speed = speed
+    this.emit()
+  }
+
+  /** Démo : brief rejoué (instantané, sans IA) ou rempli par l'IA disponible. */
+  setSimulationBriefMode(rejoue: boolean): void {
+    if (this.state.simulation) this.state.simulation.briefRejoue = rejoue
     this.emit()
   }
 

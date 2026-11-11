@@ -54,6 +54,7 @@ export function TranscriptPanel({ state, settings }: { state: SessionState; sett
         {listening ? <span className="recdot" /> : null}
         <h2>{listening ? (simulation ? 'Simulation en cours' : 'Écoute en cours') : 'Rendez-vous'}</h2>
         {listening && <span className="badge">{elapsed}</span>}
+        {state.briefStatus.provider && state.phase !== 'pret' && <span className="badge accent">Brief : {state.briefStatus.provider}{state.briefStatus.running ? ' …' : ''}</span>}
         <span className="spacer" />
         {listening && !simulation && (
           <div className="row small muted">

@@ -32,23 +32,28 @@ npm run dev        # lance l'application
 rejoué, et la transcription, le brief, la checklist et la maquette se construisent comme en vrai (maquette « de base »,
 sans IA de génération).
 
-**Pour un vrai rendez-vous**, ouvrez **Réglages** et ajoutez :
+**Pour un vrai rendez-vous**, ouvrez **Réglages** :
 
-| Clé | Sert à | Sans elle |
+| Accès | Sert à | Sans lui |
 |---|---|---|
-| Gemini (Google AI Studio) | transcription en direct ; brief en option | pas de transcription |
-| Claude (console Anthropic) | brief ; génération sur mesure de la maquette | maquette de base uniquement |
+| Clé Gemini (Google AI Studio) | transcription en direct ; brief en option | pas de transcription |
+| Claude : **clé API Anthropic** *ou* **Claude Code installé** (votre abonnement) | brief ; génération sur mesure de la maquette | maquette de base uniquement |
 
 Les clés sont chiffrées par le système (trousseau macOS / DPAPI Windows). En développement, les variables
 `ANTHROPIC_API_KEY` et `GEMINI_API_KEY` sont aussi lues.
 
+**Mode « Claude Code installé »** : AutoBuild lance le Claude Code officiel du poste en mode headless (`claude -p`),
+qui utilise sa propre connexion (`claude` puis `/login`). AutoBuild ne lit, ne copie ni ne stocke aucun identifiant.
+Ce mode sert à **tester sur son propre poste** ; pour un produit distribué à des clients, Anthropic demande
+l'authentification par clé API ([conditions](https://code.claude.com/docs/en/legal-and-compliance)).
+
 ### Installeurs Mac et Windows
 
-Le workflow GitHub Actions **« Tests et installeurs »** (onglet Actions → *Run workflow*) construit
-`AutoBuild-x.y.z-arm64.dmg` (Mac Apple Silicon) et `AutoBuild-Setup-x.y.z.exe` (Windows x64), téléchargeables dans les
-artefacts du run. Ils ne sont pas encore signés : sur Mac, clic droit → Ouvrir la première fois ; sur Windows,
-« Informations complémentaires » → Exécuter quand même.
+Les installeurs prêts à tester sont publiés dans les **Releases** du dépôt (pré-versions « version de test ») :
+`AutoBuild-Setup-x.y.z.exe` (Windows), `AutoBuild-x.y.z-arm64.dmg` (Mac Apple Silicon), `AutoBuild-x.y.z-x64.dmg`
+(Mac Intel). Guide d'installation et de test : [docs/notes-version.md](docs/notes-version.md).
 
+Pour en produire de nouveaux : onglet **Actions** → « Tests et installeurs » → *Run workflow* (ou pousser un tag `v*`).
 En local : `npm run dist:mac` (sur un Mac) ou `npm run dist:win` (sur un PC Windows).
 
 ---

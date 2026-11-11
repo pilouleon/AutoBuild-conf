@@ -5,7 +5,9 @@ import { listInputDevices } from '../audio/capture'
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [s, setS] = useState<Settings>()
-  const [keys, setKeys] = useState<{ anthropic: boolean; gemini: boolean; chiffrement: boolean }>()
+  const [keys, setKeys] = useState<{ anthropic: boolean; gemini: boolean; chiffrement: boolean; claudeCodePath?: string }>()
+  const [ccTest, setCcTest] = useState<{ ok: boolean; message: string }>()
+  const [ccTesting, setCcTesting] = useState(false)
   const [anthropic, setAnthropic] = useState('')
   const [gemini, setGemini] = useState('')
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
@@ -39,6 +41,51 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="dialog-body">
+          <div className="section">
+            <h3>Accès à Claude</h3>
+            <div className="seg" style={{ marginBottom: 10 }}>
+              <button className={s.claude.mode === 'api' ? 'on' : ''} onClick={() => set({ claude: { ...s.claude, mode: 'api' } })}>
+                Clé API Anthropic
+              </button>
+              <button className={s.claude.mode === 'claude-code' ? 'on' : ''} onClick={() => set({ claude: { ...s.claude, mode: 'claude-code' } })}>
+                Claude Code installé (mon abonnement)
+              </button>
+            </div>
+            {s.claude.mode === 'claude-code' ? (
+              <div className="stack" style={{ gap: 8 }}>
+                <p className="hint" style={{ lineHeight: 1.5 }}>
+                  AutoBuild utilise le Claude Code installé sur ce poste, avec <b>sa propre connexion</b> (faite dans un terminal avec « claude » puis /login).
+                  AutoBuild ne lit et ne stocke aucun identifiant. Le brief et la génération consomment alors l'usage de votre abonnement.
+                  Mode prévu pour <b>tester sur votre poste</b> : une version distribuée à des clients doit utiliser des clés API.
+                </p>
+                <label className="field">
+                  Chemin de « claude » (facultatif)
+                  <input className="input" value={s.claude.cliPath} onChange={(e) => set({ claude: { ...s.claude, cliPath: e.target.value } })} placeholder={keys?.claudeCodePath ? `détecté : ${keys.claudeCodePath}` : 'détection automatique'} />
+                </label>
+                <div className="row">
+                  <button
+                    className="btn sm"
+                    disabled={ccTesting}
+                    onClick={async () => {
+                      setCcTesting(true)
+                      setCcTest(undefined)
+                      await window.autobuild.saveSettings(s)
+                      setCcTest(await window.autobuild.testClaudeCode())
+                      setKeys(await window.autobuild.getKeysStatus())
+                      setCcTesting(false)
+                    }}
+                  >
+                    {ccTesting ? 'Test en cours (≈ 10 s)…' : 'Tester Claude Code'}
+                  </button>
+                  {ccTest && <span className={`badge ${ccTest.ok ? 'ok' : 'err'}`}>{ccTest.ok ? 'OK' : 'Erreur'}</span>}
+                </div>
+                {ccTest && <p className="small" style={{ color: ccTest.ok ? 'var(--ok)' : 'var(--err)' }}>{ccTest.message}</p>}
+              </div>
+            ) : (
+              <p className="hint">Clé à créer sur console.anthropic.com (facturation à l'usage). Mode recommandé pour la version commerciale.</p>
+            )}
+          </div>
+
           <div className="section">
             <h3>Clés API</h3>
             <div className="grid2">

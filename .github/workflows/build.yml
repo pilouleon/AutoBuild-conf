@@ -3,7 +3,16 @@ name: Tests et installeurs
 on:
   push:
     branches: ['**']
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      publier:
+        description: 'Publier une pré-version GitHub avec les installeurs'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
 
 jobs:
   tests:
@@ -23,15 +32,24 @@ jobs:
 
   installeurs:
     needs: tests
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            cible: --mac
-          - os: windows-latest
-            cible: --win
+          - nom: Windows
+            os: windows-latest
+            cible: --win --x64
+            npm_arch: ''
+          - nom: Mac-Apple-Silicon
+            os: macos-latest
+            cible: --mac --arm64
+            npm_arch: ''
+          # Mac Intel : construit sur le runner Apple Silicon avec les binaires x64 des dépendances.
+          - nom: Mac-Intel
+            os: macos-latest
+            cible: --mac --x64
+            npm_arch: --cpu=x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -39,17 +57,40 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      # Dépendances du template installées pour la plateforme cible (binaires natifs de Tailwind et Vite).
-      - run: npm --prefix templates/socle ci
+      - run: npm ci ${{ matrix.npm_arch }}
+      # Dépendances du template pour la plateforme cible (binaires natifs de Tailwind, Vite, TypeScript).
+      - run: npm --prefix templates/socle ci ${{ matrix.npm_arch }}
       - run: npm run build
       - run: npx electron-builder ${{ matrix.cible }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
       - uses: actions/upload-artifact@v4
         with:
-          name: AutoBuild-${{ runner.os }}
+          name: AutoBuild-${{ matrix.nom }}
           path: |
             release/*.dmg
             release/*.exe
           if-no-files-found: error
+
+  publication:
+    needs: installeurs
+    if: ${{ !cancelled() && (startsWith(github.ref, 'refs/tags/v') || inputs.publier) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: installeurs
+          merge-multiple: true
+      - name: Version
+        id: v
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}-test.{1}', steps.v.outputs.version, github.run_number) }}
+          name: AutoBuild ${{ steps.v.outputs.version }} (version de test ${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          body_path: docs/notes-version.md
+          files: installeurs/*
+          fail_on_unmatched_files: false
