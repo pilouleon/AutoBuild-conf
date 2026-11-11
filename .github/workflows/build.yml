@@ -59,12 +59,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Build de l'application avec les outils natifs du runner, AVANT d'ajouter des binaires x64.
+      - run: npm run build
       - name: Binaire de l'agent Claude pour Mac Intel
         if: matrix.intel
         run: npm install --no-save --force --os=darwin --cpu=x64 "@anthropic-ai/claude-agent-sdk-darwin-x64@$(node -p "require('@anthropic-ai/claude-agent-sdk/package.json').version")"
       # Dépendances du template pour la plateforme cible (binaires natifs de Tailwind, Vite, TypeScript).
       - run: npm --prefix templates/socle ci ${{ matrix.intel && '--cpu=x64' || '' }}
-      - run: npm run build
       - run: npx electron-builder ${{ matrix.cible }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
