@@ -6,7 +6,7 @@ import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod'
 import { GoogleGenAI } from '@google/genai'
 import { z } from 'zod'
 import { briefSystemPrompt, briefUserInstruction, formatSegments } from '@shared/brief/prompt'
-import { type Brief, type BriefPatch, BriefPatchSchema } from '@shared/brief/schema'
+import { type Brief, type BriefPatch, BriefPatchSchema, emptyPatch } from '@shared/brief/schema'
 import type { TranscriptSegment } from '@shared/types'
 import { type ClaudeCli, claudeStructured } from '../claude-code/cli'
 import type { Scenario } from '../transcription/scenario'
@@ -147,17 +147,17 @@ export class ScenarioBriefProvider implements BriefProviderImpl {
 
   async update(input: BriefInput): Promise<BriefPatch> {
     const reached = input.segments.length
-    const out: BriefPatch = { updates: [], typeProjet: '', typeProjetPreuve: null, resume: '', questionsSuggerees: [] }
+    const out: BriefPatch = emptyPatch()
     this.scenario.briefPatches.forEach((p, i) => {
       if (p.apresSegment > reached || this.given.has(i)) return
       this.given.add(i)
+      out.nouveauxChamps.push(...(p.patch.nouveauxChamps ?? []))
       out.updates.push(...p.patch.updates)
       if (p.patch.typeProjet) {
         out.typeProjet = p.patch.typeProjet
         out.typeProjetPreuve = p.patch.typeProjetPreuve
       }
       if (p.patch.resume) out.resume = p.patch.resume
-      if (p.patch.questionsSuggerees.length) out.questionsSuggerees = p.patch.questionsSuggerees
     })
     await new Promise((r) => setTimeout(r, 300))
     return out

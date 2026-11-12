@@ -28,6 +28,13 @@ Tu modifies une **maquette cliquable** (pas une application fonctionnelle) qui s
 - `src/mockup/types.ts` : le contrat de `app.json` (lis-le avant de modifier `app.json`).
 - `src/pages/EntityPage.tsx` : pages génériques des entités (vues liste / kanban / calendrier, fiche, création).
 - `src/pages/Dashboard.tsx` : tableau de bord générique (KPI, graphiques, listes récentes).
+- `src/pages/library/` : **bibliothèque de pages prêtes** (planning, devis, stocks, reporting, droits, parametres,
+  documents, actualites, annuaire, accueil-portail, tickets, suivi). Pour en activer une, ajoute dans la navigation
+  `{ "id": "planning", "label": "Planning", "icone": "calendar", "type": "page", "cible": "planning", "source": "<id d'entité>" }`
+  (`source` facultatif : l'entité dont la page affiche les données). Elles s'adaptent aux entités : préfère-les à une
+  page écrite de zéro, et adapte-les (libellés, colonnes) si le prospect a décrit son écran. Une page de `custom/`
+  enregistrée sous le même id remplace celle de la bibliothèque.
+- `app.json` → `layout` : `"sidebar"` (back-office, menu latéral) ou `"topnav"` (portail, intranet, extranet).
 - `src/pages/custom/` : **pages sur mesure**. Pour un écran spécifique au prospect (planning de chantiers, carte des
   interventions, configurateur, suivi de production, portail client…), crée `src/pages/custom/NomPage.tsx`,
   enregistre-la dans `src/pages/custom/registry.ts` et ajoute une entrée `"type": "page"` dans la navigation.

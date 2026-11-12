@@ -5,6 +5,7 @@
 import { getProjectType } from '../catalog'
 import type { Brief, BriefItem } from '../brief/schema'
 import { Faker } from './fake'
+import type { TemplatePage } from '../types'
 import type { AppConfig, Entity, Field, FieldType, NavItem } from './types'
 
 export function slugify(s: string): string {
@@ -48,6 +49,8 @@ interface Preset {
 const S = (id: string, label: string, type: FieldType, extra: Partial<Field> = {}): Field => ({ id, label, type, ...extra })
 
 const PRESETS: Preset[] = [
+  { match: /(ordre de fabrication|ordres de fabrication|fabrication|production)/i, label: 'Ordre de fabrication', icone: 'factory', titre: 'numero', statuts: ['Planifié', 'En fabrication', 'Contrôle qualité', 'Terminé'], vues: ['kanban', 'liste', 'calendrier'],
+    champs: [S('numero', 'N° OF', 'texte'), S('article', 'Article', 'texte'), S('quantite', 'Quantité', 'nombre'), S('atelier', 'Atelier', 'choix', { options: ['Atelier A', 'Atelier B', 'Montage', 'Finition'] }), S('debut', 'Début', 'date'), S('fin', 'Fin prévue', 'date'), S('responsable', 'Responsable', 'personne')] },
   { match: /(pointage|feuille de temps|feuilles d.heures|temps passé|temps passe)/i, label: 'Pointage', icone: 'clock', titre: 'reference', statuts: ['Saisi', 'Validé', 'Transmis à la paie'], vues: ['liste', 'kanban', 'calendrier'],
     champs: [S('reference', 'Référence', 'texte'), S('salarie', 'Salarié', 'personne'), S('chantier', 'Chantier', 'texte'), S('date', 'Date', 'date'), S('heures', 'Heures', 'nombre')] },
   { match: /situation/i, label: 'Situation de travaux', icone: 'invoice', titre: 'reference', statuts: ['Brouillon', 'Validée', 'Exportée en comptabilité'],
@@ -91,8 +94,9 @@ export function inferFieldType(name: string, entityNames: string[] = []): { type
   const n = name.toLowerCase()
   if (/(avancement|progression|taux|pourcentage|%)/.test(n)) return { type: 'pourcent' }
   if (/(statut|état|etat|étape|etape|phase)/.test(n)) return { type: 'statut' }
-  if (/(date|début|debut|fin\b|échéance|echeance|livraison|jour|délai le|deadline|prévu|prevu)/.test(n)) return { type: 'date' }
+  // Montants avant dates : « budget prévu », « coût prévu » sont des montants.
   if (/(montant|prix|coût|cout|budget|\bca\b|chiffre|total|\bht\b|ttc|tarif|marge|valeur)/.test(n)) return { type: 'euro' }
+  if (/(date|début|debut|fin\b|échéance|echeance|livraison|jour|délai le|deadline|prévu|prevu)/.test(n)) return { type: 'date' }
   if (/(e-?mail|courriel)/.test(n)) return { type: 'email' }
   if (/(téléphone|telephone|\btél|\btel\b|portable|mobile)/.test(n)) return { type: 'telephone' }
   if (/(chef|responsable|technicien|commercial|conducteur|gestionnaire|assigné|assigne|interlocuteur|référent|referent|salarié|salarie|employé|employe|auteur|demandeur|intervenant|ouvrier|chauffeur|opérateur|operateur)/.test(n)) return { type: 'personne' }
@@ -298,11 +302,54 @@ const TITRES: Record<string, string> = {
   'site-institutionnel': 'Espace membre'
 }
 
+export interface BaselineTemplate {
+  id: string
+  layout?: 'sidebar' | 'topnav'
+  pages: TemplatePage[]
+}
+
 export interface BaselineInput {
   brief: Brief
   nomEntreprise: string
   secteur?: string
   seed: string
+  /** Template choisi : ses pages « base » et les « options » déclenchées par le brief. */
+  template?: BaselineTemplate
+}
+
+function norm(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+/** Texte du brief utilisé pour activer les pages optionnelles des templates. */
+export function briefCorpus(brief: Brief): string {
+  const parts: string[] = [brief.resume]
+  for (const [id, c] of Object.entries(brief.champs)) {
+    if (c.status === 'manquant' || ['budget', 'delai', 'decideurs', 'concurrence', 'criteres', 'prochaine_etape', 'interlocuteur', 'taille'].includes(id)) continue
+    parts.push(c.valeur ?? '')
+    for (const i of c.items ?? []) parts.push(i.nom, i.details ?? '', ...(i.attributs ?? []))
+  }
+  return ` ${norm(parts.join(' '))} `
+}
+
+/** Nombre maximum de pages optionnelles activées automatiquement (au-delà, la maquette se dilue). */
+const MAX_OPTIONS = 4
+
+/**
+ * Pages actives d'un template pour ce brief : toutes les « base » + les « options » dont un déclencheur est cité,
+ * les plus citées d'abord (MAX_OPTIONS au plus), dans l'ordre du template.
+ */
+export function activePages(template: BaselineTemplate, brief: Brief): TemplatePage[] {
+  const corpus = briefCorpus(brief)
+  const hits = (p: TemplatePage) => p.declencheurs.reduce((n, d) => n + (corpus.split(` ${norm(d)}`).length - 1), 0)
+  const options = template.pages
+    .filter((p) => p.niveau === 'option')
+    .map((p) => ({ p, n: hits(p) }))
+    .filter((x) => x.n > 0)
+    .sort((a, b) => b.n - a.n)
+    .slice(0, MAX_OPTIONS)
+    .map((x) => x.p)
+  return template.pages.filter((p) => p.niveau === 'base' || options.includes(p))
 }
 
 /** Construit l'app.json complet à partir du brief. Les hypothèses (catalogue) complètent ce qui manque. */
@@ -311,16 +358,19 @@ export function buildAppConfig(input: BaselineInput): AppConfig {
   const pt = getProjectType(brief.typeProjet) ?? getProjectType('app-metier')!
   const ch = brief.champs
 
-  // 1. Entités : objets métier cités, puis modules cités, puis hypothèses du catalogue.
+  // 1. Entités : objets métier cités, puis modules cités, puis pages « entité » du template, puis hypothèses du catalogue.
   const items: BriefItem[] = [...(ch.entites?.items ?? [])]
   const has = (n: string, p = presetFor(n)) => items.some((i) => slugify(i.nom) === slugify(n) || (!!p && presetFor(i.nom) === p))
   for (const m of ch.modules?.items ?? []) {
     const p = presetFor(m.nom)
     if (p && !has(p.label, p)) items.push({ nom: p.label })
   }
-  if (items.length < 2) for (const e of pt.entitesTypiques) if (items.length < 3 && !has(e)) items.push({ nom: e })
+  const pages = input.template ? activePages(input.template, brief) : []
+  for (const pg of pages) if (pg.kind === 'entite' && pg.cible && !has(pg.cible)) items.push({ nom: pg.cible })
+  if (items.length < 2 && !input.template) for (const e of pt.entitesTypiques) if (items.length < 3 && !has(e)) items.push({ nom: e })
+  if (items.length === 0) items.push({ nom: pt.entitesTypiques[0] ?? 'Dossier' })
   const names = items.map((i) => i.nom)
-  let entities = items.slice(0, 7).map((i) => buildEntity(i, names))
+  let entities = items.slice(0, 8).map((i) => buildEntity(i, names))
   // Remplissage : d'abord les entités sans référence, pour que les références pointent vers des données existantes.
   const filled: Entity[] = []
   const order = [...entities].sort((a, b) => Number(a.champs.some((c) => c.type === 'reference')) - Number(b.champs.some((c) => c.type === 'reference')))
@@ -332,9 +382,17 @@ export function buildAppConfig(input: BaselineInput): AppConfig {
   const roleItems = ch.roles?.items?.length ? ch.roles.items.map((r) => ({ nom: r.nom, details: r.details })) : pt.rolesTypiques.map((r) => ({ nom: r, details: undefined }))
   const roles = roleItems.slice(0, 5).map((r) => ({ id: slugify(r.nom), label: cap(r.nom), description: r.details }))
 
-  // 3. Navigation.
-  const navigation: NavItem[] = [{ id: 'accueil', label: 'Tableau de bord', icone: 'dashboard', type: 'tableau-de-bord' }]
+  // 3. Navigation : accueil, objets du prospect, puis pages du template dans leur ordre.
+  const navigation: NavItem[] = []
+  const firstPage = pages[0]
+  if (firstPage?.kind === 'page' && firstPage.cible) navigation.push({ id: slugify(firstPage.label), label: firstPage.label, icone: firstPage.icone ?? 'home', type: 'page', cible: firstPage.cible, source: entities[0]?.id })
+  else navigation.push({ id: 'accueil', label: 'Tableau de bord', icone: 'dashboard', type: 'tableau-de-bord' })
   for (const e of entities) navigation.push({ id: slugify(e.labelPluriel), label: e.labelPluriel, icone: e.icone, type: 'entite', cible: e.id })
+  for (const pg of pages.slice(firstPage?.kind === 'page' ? 1 : 0)) {
+    if (pg.kind !== 'page' || !pg.cible) continue
+    if (navigation.some((n) => n.type === 'page' && n.cible === pg.cible)) continue
+    navigation.push({ id: slugify(pg.label), label: pg.label, icone: pg.icone ?? 'layers', type: 'page', cible: pg.cible, source: entities[0]?.id })
+  }
 
   // 4. Tableau de bord.
   const main = entities[0]
@@ -382,6 +440,7 @@ export function buildAppConfig(input: BaselineInput): AppConfig {
 
   const typeLabel = TITRES[pt.id] ?? main?.labelPluriel ?? 'Gestion'
   return {
+    layout: input.template?.layout ?? 'sidebar',
     titre: `${nomEntreprise} ${typeLabel}`.trim(),
     sousTitre: brief.resume || pt.description,
     typeProjet: pt.id,

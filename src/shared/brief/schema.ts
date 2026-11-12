@@ -125,13 +125,10 @@ export const FIELDS: FieldDef[] = [
 
 export const FIELD_IDS = FIELDS.map((f) => f.id)
 
-export function getField(id: string): FieldDef | undefined {
-  return FIELDS.find((f) => f.id === id)
-}
-
-export interface SuggestedQuestion {
-  fieldId: string
-  question: string
+/** Champ ajouté au brief en cours de route : propre au type de projet, ou proposé par l'IA. */
+export interface ExtraFieldDef extends FieldDef {
+  origine: 'type' | 'ia'
+  ajouteLe: number
 }
 
 export interface Brief {
@@ -141,13 +138,36 @@ export interface Brief {
   typeProjet: string | null
   resume: string
   champs: Record<string, FieldState>
-  questionsSuggerees: SuggestedQuestion[]
+  /** Infos ajoutées en cours de rendez-vous (par le type de projet ou par l'IA). */
+  champsAjoutes: ExtraFieldDef[]
+}
+
+/** Toutes les infos du brief : la grille commune + celles ajoutées pour ce projet. */
+export function allFields(brief?: Pick<Brief, 'champsAjoutes'>): FieldDef[] {
+  return [...FIELDS, ...(brief?.champsAjoutes ?? [])]
+}
+
+export function getField(id: string, brief?: Pick<Brief, 'champsAjoutes'>): FieldDef | undefined {
+  return FIELDS.find((f) => f.id === id) ?? brief?.champsAjoutes?.find((f) => f.id === id)
+}
+
+export function isExtra(id: string, brief: Pick<Brief, 'champsAjoutes'>): ExtraFieldDef | undefined {
+  return brief.champsAjoutes?.find((f) => f.id === id)
 }
 
 export function emptyBrief(): Brief {
   const champs: Record<string, FieldState> = {}
   for (const f of FIELDS) champs[f.id] = { status: 'manquant', preuves: [] }
-  return { version: 0, majLe: 0, typeProjet: null, resume: '', champs, questionsSuggerees: [] }
+  return { version: 0, majLe: 0, typeProjet: null, resume: '', champs, champsAjoutes: [] }
+}
+
+/** Compatibilité avec les briefs enregistrés avant l'ajout des champs dynamiques. */
+export function normalizeBrief(b: Brief): Brief {
+  const champs = { ...b.champs }
+  for (const f of FIELDS) if (!champs[f.id]) champs[f.id] = { status: 'manquant', preuves: [] }
+  const extra = b.champsAjoutes ?? []
+  for (const f of extra) if (!champs[f.id]) champs[f.id] = { status: 'manquant', preuves: [] }
+  return { ...b, champs, champsAjoutes: extra }
 }
 
 // ── Format de sortie demandé au LLM (patch incrémental) ─────────
@@ -166,29 +186,40 @@ export const PatchEvidenceSchema = z.object({
 })
 
 export const PatchUpdateSchema = z.object({
-  fieldId: z.enum(FIELD_IDS as [string, ...string[]]),
+  fieldId: z.string().describe('Id d’une info de la grille, ou d’une info ajoutée (champsAjoutes ou nouveauxChamps)'),
   status: z.enum(['partiel', 'obtenu']),
   valeur: z.string().describe('Résumé fidèle en une phrase, sans extrapolation'),
   items: z.array(PatchItemSchema).describe('Pour les champs de type liste ; tableau vide sinon'),
   preuves: z.array(PatchEvidenceSchema)
 })
 
+export const NewFieldSchema = z.object({
+  id: z.string().describe('Identifiant court en minuscules et tirets bas, ex. nb_chantiers_an'),
+  label: z.string().describe('Libellé court affiché dans la checklist, ex. « Chantiers par an »'),
+  description: z.string().describe('Ce qu’il faut obtenir exactement'),
+  groupe: z.enum(['entreprise', 'projet', 'utilisateurs', 'fonctionnel', 'technique', 'commercial']),
+  type: z.enum(['texte', 'liste'])
+})
+
 export const BriefPatchSchema = z.object({
+  nouveauxChamps: z.array(NewFieldSchema).describe('0 à 2 infos à ajouter à la checklist car importantes pour CE projet et absentes de la grille'),
   updates: z.array(PatchUpdateSchema),
   typeProjet: z.string().describe('Id du catalogue, ou chaîne vide si pas encore clair'),
   typeProjetPreuve: PatchEvidenceSchema.nullable(),
-  resume: z.string().describe('Le besoin en 1 à 2 phrases, uniquement à partir de ce qui a été dit'),
-  questionsSuggerees: z
-    .array(z.object({ fieldId: z.string(), question: z.string() }))
-    .describe('2 ou 3 questions à poser maintenant, sur les infos manquantes les plus importantes')
+  resume: z.string().describe('Le besoin en 1 à 2 phrases, uniquement à partir de ce qui a été dit')
 })
 
 export type BriefPatch = z.infer<typeof BriefPatchSchema>
 export type PatchUpdate = z.infer<typeof PatchUpdateSchema>
+export type NewField = z.infer<typeof NewFieldSchema>
 
-/** Progression par groupe, pour la checklist. */
+export function emptyPatch(): BriefPatch {
+  return { nouveauxChamps: [], updates: [], typeProjet: '', typeProjetPreuve: null, resume: '' }
+}
+
+/** Progression (toutes infos ou par groupe), champs ajoutés compris. */
 export function progress(brief: Brief, groupe?: GroupId): { obtenu: number; partiel: number; total: number; pct: number } {
-  const fields = FIELDS.filter((f) => !groupe || f.groupe === groupe)
+  const fields = allFields(brief).filter((f) => !groupe || f.groupe === groupe)
   let obtenu = 0
   let partiel = 0
   for (const f of fields) {
@@ -198,4 +229,38 @@ export function progress(brief: Brief, groupe?: GroupId): { obtenu: number; part
   }
   const pct = fields.length ? Math.round(((obtenu + partiel * 0.5) / fields.length) * 100) : 0
   return { obtenu, partiel, total: fields.length, pct }
+}
+
+export interface ChecklistItem {
+  id: string
+  label: string
+  status: FieldStatus
+  valeur?: string
+  cle: boolean
+  origine: 'grille' | 'type' | 'ia'
+  majLe: number
+}
+
+/**
+ * Liste de la checklist du widget : les infos obtenues en haut (de la plus ancienne à la plus récente,
+ * pour que les nouvelles arrivent juste au-dessus des manques), puis les infos à obtenir en bas
+ * (les clés en dernier, au plus près du bas de l'écran).
+ */
+export function checklist(brief: Brief): { obtenus: ChecklistItem[]; manquants: ChecklistItem[] } {
+  const items: ChecklistItem[] = allFields(brief).map((f) => {
+    const c = brief.champs[f.id]
+    const extra = isExtra(f.id, brief)
+    return {
+      id: f.id,
+      label: f.label,
+      status: c?.status ?? 'manquant',
+      valeur: c?.items?.length ? c.items.map((i) => i.nom).join(', ') : c?.valeur,
+      cle: f.priorite === 1,
+      origine: extra ? extra.origine : 'grille',
+      majLe: c?.majLe ?? extra?.ajouteLe ?? 0
+    }
+  })
+  const obtenus = items.filter((i) => i.status !== 'manquant').sort((a, b) => a.majLe - b.majLe)
+  const manquants = items.filter((i) => i.status === 'manquant').sort((a, b) => Number(a.cle) - Number(b.cle))
+  return { obtenus, manquants }
 }

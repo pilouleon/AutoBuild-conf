@@ -2,7 +2,7 @@
 
 import { PROJECT_TYPES } from '../catalog'
 import type { TranscriptSegment } from '../types'
-import { type Brief, FIELDS, GROUPS } from './schema'
+import { type Brief, FIELDS, GROUPS, allFields, isExtra } from './schema'
 
 export function formatTime(ms: number): string {
   const s = Math.floor(ms / 1000)
@@ -45,8 +45,8 @@ ${grille}
 CATALOGUE DES TYPES DE PROJET (typeProjet = un de ces id, ou chaîne vide si ce n'est pas encore clair)
 ${catalogue}
 
-QUESTIONS SUGGÉRÉES
-Propose 2 ou 3 questions naturelles, en français, que le commercial peut poser MAINTENANT pour obtenir les infos manquantes les plus utiles (priorité : type de projet, modules, objets métier, rôles, puis budget, délai, décideurs). Formule-les en lien avec ce qui vient d'être dit.
+INFOS AJOUTÉES (nouveauxChamps)
+La grille est commune à tous les projets. Si la conversation révèle une information importante pour CE projet qui n'est couverte par aucune info existante (grille ou infos ajoutées listées dans le brief actuel), propose-la dans nouveauxChamps (0 à 2 par mise à jour, et seulement si c'est vraiment utile pour chiffrer ou maquetter le projet). Exemples : « Chantiers par an », « Multi-sociétés », « Signature électronique ». Si l'info a déjà été dite, remplis-la aussi dans updates avec son id et sa preuve.
 
 Réponds uniquement avec l'objet JSON demandé.`
 }
@@ -54,16 +54,18 @@ Réponds uniquement avec l'objet JSON demandé.`
 /** Résumé compact de l'état actuel du brief pour le LLM. */
 export function briefStateForPrompt(brief: Brief): string {
   const lignes: string[] = []
-  for (const f of FIELDS) {
+  for (const f of allFields(brief)) {
     const c = brief.champs[f.id]
+    const extra = isExtra(f.id, brief)
+    const tag = extra ? ` [ajoutée : ${f.label} — ${f.description} (${f.type})]` : ''
     if (!c || c.status === 'manquant') {
-      lignes.push(`${f.id}: manquant`)
+      lignes.push(`${f.id}: manquant${tag}`)
       continue
     }
     const items = c.items?.length
       ? ` | items: ${c.items.map((i) => i.nom + (i.attributs?.length ? ` (${i.attributs.join(', ')})` : '')).join(' ; ')}`
       : ''
-    lignes.push(`${f.id}: ${c.status} | ${c.valeur ?? ''}${items}`)
+    lignes.push(`${f.id}: ${c.status} | ${c.valeur ?? ''}${items}${tag}`)
   }
   return `typeProjet: ${brief.typeProjet ?? '(pas encore clair)'}\nresume: ${brief.resume || '(vide)'}\n${lignes.join('\n')}`
 }

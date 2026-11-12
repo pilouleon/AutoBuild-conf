@@ -23,7 +23,9 @@ export function defaultSettings(): Settings {
     agence: { nom: '', mention: 'Maquette de travail, données fictives' },
     templatesDir: '',
     workspacesDir: join(homedir(), 'Documents', 'AutoBuild', 'maquettes'),
-    generation: { agentEnabled: true, maxAgentMinutes: 4 }
+    generation: { agentEnabled: true, maxAgentMinutes: 4 },
+    profil: { nom: '', fonction: 'Commercial' },
+    widget: {}
   }
 }
 
@@ -37,6 +39,8 @@ export function mergeSettings(saved: Partial<Settings> | undefined): Settings {
     claude: { ...d.claude, ...saved.claude },
     audio: { ...d.audio, ...saved.audio },
     agence: { ...d.agence, ...saved.agence },
-    generation: { ...d.generation, ...saved.generation }
+    generation: { ...d.generation, ...saved.generation },
+    profil: { ...d.profil, ...saved.profil },
+    widget: { ...d.widget, ...saved.widget }
   }
 }

@@ -4,9 +4,10 @@
 
 import type { TranscriptSegment } from '../types'
 import { getProjectType } from '../catalog'
-import { type Brief, type BriefPatch, type Evidence, type FieldState, getField } from './schema'
+import { type Brief, type BriefPatch, type Evidence, type ExtraFieldDef, type FieldState, allFields, getField, normalizeBrief } from './schema'
 
 export interface MergeReport {
+  champsAjoutes: string[]
   accepted: string[]
   rejected: { fieldId: string; raison: string }[]
   typeProjetChange: boolean
@@ -72,11 +73,35 @@ export function applyPatch(
   segments: TranscriptSegment[],
   now = Date.now()
 ): { brief: Brief; report: MergeReport } {
-  const next: Brief = structuredClone(brief)
-  const report: MergeReport = { accepted: [], rejected: [], typeProjetChange: false }
+  const next: Brief = normalizeBrief(structuredClone(brief))
+  const report: MergeReport = { accepted: [], rejected: [], typeProjetChange: false, champsAjoutes: [] }
 
+  // 1. Infos proposées par l'IA pour CE projet (avant les mises à jour, qui peuvent déjà les remplir).
+  for (const nf of patch.nouveauxChamps ?? []) {
+    const added = addExtraField(next, { ...nf, origine: 'ia' }, now)
+    if (added) report.champsAjoutes.push(added)
+  }
+
+  // 2. Type de projet : uniquement un id du catalogue, avec une preuve valide. Ajoute ses infos propres.
+  const tp = patch.typeProjet?.trim()
+  if (tp && tp !== next.typeProjet && getProjectType(tp)) {
+    const p = patch.typeProjetPreuve
+    const ok = p ? findEvidence(segments, p.segmentId, p.citation) : undefined
+    if (ok) {
+      next.typeProjet = tp
+      report.typeProjetChange = true
+      for (const f of getProjectType(tp)!.champs) {
+        const added = addExtraField(next, { ...f, origine: 'type' }, now)
+        if (added) report.champsAjoutes.push(added)
+      }
+    } else {
+      report.rejected.push({ fieldId: 'typeProjet', raison: 'type de projet sans preuve' })
+    }
+  }
+
+  // 3. Mises à jour, chacune prouvée par une citation.
   for (const u of patch.updates) {
-    const def = getField(u.fieldId)
+    const def = getField(u.fieldId, next)
     if (!def) {
       report.rejected.push({ fieldId: u.fieldId, raison: 'champ inconnu' })
       continue
@@ -117,24 +142,7 @@ export function applyPatch(
     report.accepted.push(u.fieldId)
   }
 
-  // Type de projet : uniquement un id du catalogue, avec une preuve valide.
-  const tp = patch.typeProjet?.trim()
-  if (tp && tp !== next.typeProjet && getProjectType(tp)) {
-    const p = patch.typeProjetPreuve
-    const ok = p ? findEvidence(segments, p.segmentId, p.citation) : undefined
-    if (ok) {
-      next.typeProjet = tp
-      report.typeProjetChange = true
-    } else {
-      report.rejected.push({ fieldId: 'typeProjet', raison: 'type de projet sans preuve' })
-    }
-  }
-
   if (patch.resume?.trim()) next.resume = patch.resume.trim()
-  next.questionsSuggerees = patch.questionsSuggerees
-    .filter((q) => next.champs[q.fieldId] && next.champs[q.fieldId].status !== 'obtenu' && q.question.trim())
-    .slice(0, 3)
-  if (next.questionsSuggerees.length === 0) next.questionsSuggerees = defaultQuestions(next)
   next.version = brief.version + 1
   next.majLe = now
   return { brief: next, report }
@@ -150,23 +158,39 @@ function dedupeEvidence(list: Evidence[]): Evidence[] {
   })
 }
 
-/** Questions par défaut : les champs prioritaires encore manquants, dans l'ordre de la grille. */
-export function defaultQuestions(brief: Brief): { fieldId: string; question: string }[] {
-  const out: { fieldId: string; question: string }[] = []
-  for (const prio of [1, 2, 3] as const) {
-    for (const id of Object.keys(brief.champs)) {
-      const def = getField(id)
-      if (!def || def.priorite !== prio) continue
-      if (brief.champs[id].status === 'manquant') out.push({ fieldId: id, question: def.question })
-      if (out.length >= 3) return out
-    }
-  }
-  return out
+const MAX_CHAMPS_IA = 8
+
+/** Ajoute une info à la checklist (si elle n'existe pas déjà). Renvoie son id, ou undefined. */
+export function addExtraField(
+  brief: Brief,
+  f: { id: string; label: string; description: string; groupe: ExtraFieldDef['groupe']; type: ExtraFieldDef['type']; origine: 'type' | 'ia' },
+  now = Date.now()
+): string | undefined {
+  const id = f.id.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40)
+  if (!id || !f.label.trim() || getField(id, brief)) return undefined
+  // Pas de doublon de libellé avec une info existante.
+  const label = f.label.trim()
+  if (allFields(brief).some((x) => normalize(x.label) === normalize(label))) return undefined
+  if (f.origine === 'ia' && brief.champsAjoutes.filter((x) => x.origine === 'ia').length >= MAX_CHAMPS_IA) return undefined
+  brief.champsAjoutes.push({
+    id,
+    label,
+    description: f.description.trim(),
+    groupe: f.groupe,
+    type: f.type,
+    question: '',
+    priorite: 2,
+    maquette: f.groupe === 'fonctionnel' || f.groupe === 'utilisateurs',
+    origine: f.origine,
+    ajouteLe: now
+  })
+  brief.champs[id] = { status: 'manquant', preuves: [] }
+  return id
 }
 
 /** Saisie manuelle par le commercial (verrouille le champ). */
 export function setManualField(brief: Brief, fieldId: string, valeur: string, now = Date.now()): Brief {
-  const next = structuredClone(brief)
+  const next = normalizeBrief(structuredClone(brief))
   if (!next.champs[fieldId]) return brief
   if (!valeur.trim()) {
     next.champs[fieldId] = { status: 'manquant', preuves: [] }
@@ -174,7 +198,7 @@ export function setManualField(brief: Brief, fieldId: string, valeur: string, no
     next.champs[fieldId] = {
       status: 'obtenu',
       valeur: valeur.trim(),
-      items: getField(fieldId)?.type === 'liste' ? valeur.split(/[,;\n]/).map((v) => ({ nom: v.trim() })).filter((i) => i.nom) : undefined,
+      items: getField(fieldId, next)?.type === 'liste' ? valeur.split(/[,;\n]/).map((v) => ({ nom: v.trim() })).filter((i) => i.nom) : undefined,
       preuves: [{ source: 'saisie', citation: valeur.trim() }],
       majLe: now
     }
@@ -190,7 +214,7 @@ export function applySiteInfo(
   info: { url: string; nom?: string; identite?: string; secteur?: string },
   now = Date.now()
 ): Brief {
-  const next = structuredClone(brief)
+  const next = normalizeBrief(structuredClone(brief))
   const put = (fieldId: string, valeur: string | undefined, status: 'partiel' | 'obtenu') => {
     if (!valeur) return
     const cur = next.champs[fieldId]

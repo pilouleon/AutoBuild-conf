@@ -94,6 +94,8 @@ export interface NavItem {
   /** Rôles qui voient l'entrée (tous si absent). */
   roles?: string[]
   section?: string
+  /** Pour une page de la bibliothèque : entité dont elle affiche les données (sinon la première adaptée). */
+  source?: string
 }
 
 export interface Role {
@@ -103,6 +105,8 @@ export interface Role {
 }
 
 export interface AppConfig {
+  /** Mise en page : menu latéral (back-office) ou menu horizontal (portail, intranet, extranet). */
+  layout?: 'sidebar' | 'topnav'
   titre: string
   sousTitre?: string
   typeProjet: string

@@ -1,8 +1,15 @@
-import type { KeysStatus, ScenarioInfo, SessionState, Settings, Speaker, TemplateInfo } from '../shared/types'
+import type { AppData, KeysStatus, NouveauRdvInput, Prospect, Rdv, ScenarioInfo, SessionState, Settings, Speaker, TemplateInfo } from '../shared/types'
+
+export type RdvPatch = Partial<Pick<Rdv, 'debut' | 'dureeMin' | 'lienVisio' | 'contexte' | 'notes' | 'interlocuteurs' | 'templateChoisi'>>
+export type ProspectPatch = Partial<Pick<Prospect, 'nom' | 'siteUrl' | 'secteur' | 'notes' | 'interlocuteurs'>>
 
 export interface AutoBuildApi {
+  // État du rendez-vous en direct.
   getState(): Promise<SessionState>
   onState(cb: (s: SessionState) => void): () => void
+  // Données enregistrées sur le poste (prospects, rendez-vous).
+  getData(): Promise<AppData>
+  onData(cb: (d: AppData) => void): () => void
 
   getSettings(): Promise<Settings>
   saveSettings(s: Settings): Promise<Settings>
@@ -14,26 +21,45 @@ export interface AutoBuildApi {
   listScenarios(): Promise<ScenarioInfo[]>
   listTemplates(): Promise<TemplateInfo[]>
 
-  prepare(prospect: { nom: string; url: string; notes: string }): Promise<void>
-  prepareScenario(id: string, speed: number): Promise<void>
-  start(): Promise<void>
-  stop(): Promise<void>
-  finalize(): Promise<void>
-  reset(): Promise<void>
+  createRdv(input: NouveauRdvInput): Promise<Rdv>
+  createDemoRdv(scenarioId: string): Promise<Rdv>
+  updateRdv(id: string, patch: RdvPatch): Promise<Rdv | undefined>
+  deleteRdv(id: string): Promise<void>
+  prepareRdv(id: string): Promise<void>
+  updateProspect(id: string, patch: ProspectPatch): Promise<Prospect | undefined>
+
+  openLive(rdvId: string, speed?: number): Promise<void>
+  startLive(): Promise<void>
+  pauseLive(v: boolean): Promise<void>
+  finishLive(): Promise<void>
+  closeLive(): Promise<void>
   setSpeed(speed: number): Promise<void>
   setBriefMode(rejoue: boolean): Promise<void>
   setConsent(v: boolean): Promise<void>
-  setManual(fieldId: string, valeur: string): Promise<void>
+  runBriefNow(): Promise<void>
+  setManual(rdvId: string, fieldId: string, valeur: string): Promise<void>
   rollback(target: 'planB' | 'lastGood'): Promise<void>
   cancelAgent(): Promise<void>
-  runBriefNow(): Promise<void>
 
-  openPreview(): Promise<void>
-  openChecklist(): Promise<void>
-  openWorkspace(): Promise<void>
-  exportBrief(): Promise<string | undefined>
+  showMain(): Promise<void>
+  showWidget(): Promise<void>
+  hideWidget(): Promise<void>
+  setWidgetMode(mode: 'ouvert' | 'reduit'): Promise<void>
+  getWidgetMode(): Promise<'ouvert' | 'reduit'>
+  onWidgetMode(cb: (mode: 'ouvert' | 'reduit') => void): () => void
+
+  viewMaquette(rdvId: string): Promise<string>
+  presentMaquette(rdvId: string): Promise<void>
+  restoreVersion(rdvId: string, versionId: string): Promise<void>
+  openMaquetteFolder(rdvId: string): Promise<void>
+
+  exportMarkdown(rdvId: string): Promise<string>
+  exportPdf(rdvId: string): Promise<string>
+  emailText(rdvId: string): Promise<string>
+
   chooseFolder(title: string): Promise<string | undefined>
   chooseImage(title: string): Promise<string | undefined>
+  openExternal(url: string): Promise<void>
 
   sendChunk(speaker: Speaker, startMs: number, endMs: number, wav: Uint8Array): void
   sendPcm(speaker: Speaker, pcm: Uint8Array, atMs: number): void

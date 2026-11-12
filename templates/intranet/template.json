@@ -1,0 +1,92 @@
+{
+  "id": "intranet",
+  "name": "Intranet",
+  "description": "Portail des collaborateurs : actualités, annuaire, documents, demandes internes, agenda.",
+  "projectTypes": [
+    "intranet"
+  ],
+  "extends": "socle",
+  "layout": "topnav",
+  "couleur": "#9a3412",
+  "pages": [
+    {
+      "id": "actualites",
+      "label": "Accueil",
+      "description": "Actualités de l’entreprise et raccourcis.",
+      "niveau": "base",
+      "kind": "page",
+      "declencheurs": [],
+      "cible": "actualites",
+      "icone": "home"
+    },
+    {
+      "id": "annuaire",
+      "label": "Annuaire",
+      "description": "Collaborateurs par service, site et compétences.",
+      "niveau": "base",
+      "kind": "page",
+      "declencheurs": [],
+      "cible": "annuaire",
+      "icone": "users"
+    },
+    {
+      "id": "documents",
+      "label": "Documents",
+      "description": "Notes de service, procédures, modèles.",
+      "niveau": "base",
+      "kind": "page",
+      "declencheurs": [],
+      "cible": "documents",
+      "icone": "file"
+    },
+    {
+      "id": "demandes",
+      "label": "Demandes",
+      "description": "Congés, matériel, notes de frais : demandes et validations.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "demande",
+        "congé",
+        "absence",
+        "matériel",
+        "note de frais",
+        "rh",
+        "validation"
+      ],
+      "cible": "Demande",
+      "icone": "ticket"
+    },
+    {
+      "id": "planning",
+      "label": "Agenda",
+      "description": "Agenda des équipes et réservation de ressources.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "agenda",
+        "planning",
+        "réservation",
+        "salle",
+        "véhicule"
+      ],
+      "cible": "planning",
+      "icone": "calendar"
+    },
+    {
+      "id": "droits",
+      "label": "Utilisateurs et droits",
+      "description": "Rôles et accès par service.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "droit",
+        "rôle",
+        "accès",
+        "habilitation"
+      ],
+      "cible": "droits",
+      "icone": "shield"
+    }
+  ]
+}

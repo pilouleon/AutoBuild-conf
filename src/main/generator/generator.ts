@@ -1,6 +1,7 @@
 // Orchestrateur de génération : du brief à la maquette, pendant l'appel.
 //
-//  1. Préparation (avant l'appel) : copie du template, marque du prospect, version de base, preview, plan B.
+//  1. Préparation (avant l'appel, éventuellement la veille) : copie du template, marque du prospect, version de base,
+//     plan B. Au lancement du RDV, la maquette préparée est rouverte (attach) et la preview démarrée.
 //  2. Pendant l'appel : à chaque mise à jour du brief, la version de base est régénérée (tant que l'IA
 //     n'a pas pris la main), puis l'agent IA fait des étapes de sur-mesure en tâche de fond.
 //  3. Garde-fou : après chaque étape IA, la maquette est compilée ; si ça casse, retour à l'instantané précédent.
@@ -12,13 +13,13 @@ import { briefStateForPrompt } from '@shared/brief/prompt'
 import type { Brief } from '@shared/brief/schema'
 import { buildAppConfig, slugify } from '@shared/mockup/baseline'
 import type { AppConfig, MockupAgence, MockupBrand } from '@shared/mockup/types'
-import type { AgencySignature, Brand, GenerationState, GenerationStep, StepStatus } from '@shared/types'
+import type { AgencySignature, Brand, GenerationState, GenerationStep, MaquetteVersion, Rdv, StepStatus } from '@shared/types'
 import type { ClaudeCli } from '../claude-code/cli'
 import { runAgent } from './agent'
 import { runNode } from './node-runner'
 import { PreviewServer } from './preview'
 import { type AgentStepKind, agentPrompt } from './prompts'
-import { type LoadedTemplate, selectTemplate } from './templates'
+import { type LoadedTemplate, sameProject, selectTemplate } from './templates'
 import { Workspace } from './workspace'
 
 export interface GeneratorDeps {
@@ -45,6 +46,24 @@ export interface PrepareInput {
   brief: Brief
   siteText?: string
   secteur?: string
+  /** 'auto' ou id du template imposé. */
+  templateChoisi?: string
+  /** Type de projet pressenti avant l'appel, pour choisir le template de départ. */
+  typeHint?: string | null
+  /** Reprise de la maquette d'un RDV précédent (R2). */
+  reprise?: { dir: string; templateId?: string }
+  /** Nom du dossier de la maquette. */
+  nom?: string
+}
+
+/** Ce qu'on enregistre d'une maquette dans le rendez-vous. */
+export type MaquetteInfo = Rdv['maquette']
+
+export interface AttachContext {
+  brand: Brand
+  brief: Brief
+  secteur?: string
+  templateChoisi?: string
 }
 
 /** Signature des infos du brief qui changent la maquette (pour savoir s'il faut relancer l'IA). */
@@ -57,7 +76,7 @@ const STABILITY_MS = 12_000
 const MAX_WAIT_MS = 40_000
 
 export class Generator {
-  state: GenerationState = { status: 'inactif', agentOwnsApp: false, steps: [] }
+  state: GenerationState = { status: 'inactif', agentOwnsApp: false, steps: [], versions: [] }
   ws?: Workspace
   private preview?: PreviewServer
   private brand?: Brand
@@ -74,8 +93,28 @@ export class Generator {
   private abort?: AbortController
   /** Échecs consécutifs de l'IA : au-delà de 2, l'IA est coupée pour ce rendez-vous. */
   private agentFailures = 0
+  private templateChoisi = 'auto'
 
   constructor(private deps: GeneratorDeps) {}
+
+  /** Infos à enregistrer dans le rendez-vous. */
+  info(): MaquetteInfo {
+    return {
+      workspace: this.ws?.dir,
+      templateId: this.state.templateId,
+      templateName: this.state.templateName,
+      planB: this.state.planBCommit,
+      lastGood: this.state.lastGoodCommit,
+      agentOwnsApp: this.state.agentOwnsApp,
+      steps: this.state.steps,
+      versions: this.state.versions
+    }
+  }
+
+  private addVersion(id: string, label: string): void {
+    const v: MaquetteVersion = { id, label, at: Date.now() }
+    this.state.versions = [...this.state.versions, v]
+  }
 
   private emit(): void {
     this.deps.onState(structuredClone(this.state))
@@ -96,38 +135,94 @@ export class Generator {
   }
 
   // ── 1. Préparation ─────────────────────────────────────────────
-  async prepare(input: PrepareInput): Promise<void> {
+  /** Crée la maquette de départ (sans preview) : peut être fait bien avant le rendez-vous. */
+  async prepare(input: PrepareInput): Promise<MaquetteInfo> {
     this.stopped = false
     this.brand = input.brand
     this.brief = input.brief
     this.secteur = input.secteur
-    this.state = { status: 'preparation', agentOwnsApp: false, steps: [] }
+    this.templateChoisi = input.templateChoisi || 'auto'
+    this.state = { status: 'preparation', agentOwnsApp: false, steps: [], versions: [] }
     this.emit()
-    const step = this.addStep('socle', 'Préparation de la maquette (template + marque)')
+    const step = this.addStep('socle', input.reprise ? 'Reprise de la maquette précédente' : 'Préparation de la maquette (template + marque)')
     try {
-      const template = selectTemplate(this.deps.templates(), input.brief.typeProjet)
-      if (!template) throw new Error("Aucun template prêt. Installez les dépendances du template socle (voir README).")
-      this.ws = Workspace.create(this.deps.workspacesDir(), slugify(input.brand.nomEntreprise), template)
+      const templates = this.deps.templates()
+      const name = input.nom ?? slugify(input.brand.nomEntreprise)
+      let template: LoadedTemplate | undefined
+      if (input.reprise && existsSync(input.reprise.dir)) {
+        template = templates.find((t) => t.id === input.reprise!.templateId) ?? selectTemplate(templates, input.brief.typeProjet ?? input.typeHint ?? null, this.templateChoisi)
+        if (!template) throw new Error('Template de la maquette précédente introuvable.')
+        this.ws = Workspace.duplicate(this.deps.workspacesDir(), name, input.reprise.dir, template)
+        // L'IA avait la main sur la maquette précédente : on garde son travail.
+        this.state.agentOwnsApp = true
+        this.writeBrandFiles(input)
+      } else {
+        template = selectTemplate(templates, input.brief.typeProjet ?? input.typeHint ?? null, this.templateChoisi)
+        if (!template) throw new Error('Aucun template prêt. Installez les dépendances du template socle (voir README).')
+        this.ws = Workspace.create(this.deps.workspacesDir(), name, template)
+        this.writeBrandFiles(input)
+        this.writeBaseline()
+      }
       this.state.templateId = template.id
+      this.state.templateName = template.name
       this.state.workspace = this.ws.dir
-      this.writeBrandFiles(input)
-      this.writeBaseline()
       this.state.planBCommit = this.ws.snapshot('plan-b')
       this.state.lastGoodCommit = this.state.planBCommit
+      this.addVersion(this.state.planBCommit, input.reprise ? 'Maquette du rendez-vous précédent' : 'Maquette de départ (plan B)')
       this.endStep(step, 'ok', `Template « ${template.name} »`)
+      this.state.status = 'pret'
+      this.emit()
+      return this.info()
+    } catch (err) {
+      for (const s of this.state.steps) if (s.status === 'en_cours') this.endStep(s, 'echec', (err as Error).message)
+      this.state.status = 'erreur'
+      this.emit()
+      throw err
+    }
+  }
 
-      const pv = this.addStep('verification', 'Démarrage de la preview')
+  /** Rouvre une maquette préparée à l'avance (au lancement du rendez-vous). */
+  attach(info: MaquetteInfo, ctx: AttachContext): void {
+    if (!info.workspace || !existsSync(info.workspace)) throw new Error('Maquette préparée introuvable sur le disque.')
+    const templates = this.deps.templates()
+    const template = templates.find((t) => t.id === info.templateId) ?? selectTemplate(templates, ctx.brief.typeProjet, ctx.templateChoisi)
+    if (!template) throw new Error('Template introuvable.')
+    this.stopped = false
+    this.ws = Workspace.open(info.workspace, template)
+    this.brand = ctx.brand
+    this.brief = ctx.brief
+    this.secteur = ctx.secteur
+    this.templateChoisi = ctx.templateChoisi || 'auto'
+    this.agentFailures = 0
+    this.agentSteps = 0
+    this.dataStepDone = false
+    this.lastAgentSignature = ''
+    this.state = {
+      status: 'pret',
+      templateId: template.id,
+      templateName: template.name,
+      workspace: info.workspace,
+      planBCommit: info.planB,
+      lastGoodCommit: info.lastGood ?? info.planB,
+      agentOwnsApp: !!info.agentOwnsApp,
+      steps: [...(info.steps ?? [])],
+      versions: [...(info.versions ?? [])]
+    }
+    this.emit()
+  }
+
+  async startPreview(): Promise<string> {
+    if (!this.ws) throw new Error('Pas de maquette ouverte.')
+    if (this.state.previewUrl && this.preview) return this.state.previewUrl
+    const pv = this.addStep('verification', 'Démarrage de la preview')
+    try {
       this.preview = new PreviewServer(this.ws, (m, l) => this.deps.log(m, l))
       this.state.previewUrl = await this.preview.start()
       this.endStep(pv, 'ok', this.state.previewUrl)
-      this.state.status = 'pret'
-      this.emit()
       this.deps.log(`Maquette prête : ${this.state.previewUrl}`, 'success')
+      return this.state.previewUrl
     } catch (err) {
-      for (const s of this.state.steps) if (s.status === 'en_cours') this.endStep(s, 'echec', (err as Error).message)
-      this.deps.log(`Préparation de la maquette : ${(err as Error).message}`, 'error')
-      this.state.status = 'erreur'
-      this.emit()
+      this.endStep(pv, 'echec', (err as Error).message)
       throw err
     }
   }
@@ -168,7 +263,8 @@ export class Generator {
   /** Régénère app.json avec le générateur de base (sans IA). */
   private writeBaseline(): boolean {
     if (!this.ws || !this.brief || !this.brand) return false
-    const app: AppConfig = buildAppConfig({ brief: this.brief, nomEntreprise: this.brand.nomEntreprise, secteur: this.secteur, seed: slugify(this.brand.nomEntreprise) })
+    const t = this.ws.template
+    const app: AppConfig = buildAppConfig({ brief: this.brief, nomEntreprise: this.brand.nomEntreprise, secteur: this.secteur, seed: slugify(this.brand.nomEntreprise), template: { id: t.id, layout: t.layout, pages: t.pages } })
     const before = JSON.stringify(this.ws.readJson('app.json'))
     if (before === JSON.stringify(app)) return false
     this.ws.writeJson('app.json', app)
@@ -181,6 +277,7 @@ export class Generator {
     this.brief = brief
     if (secteur) this.secteur = secteur
     this.ws.writeJson('brief.json', brief)
+    this.maybeSwitchTemplate()
     if (!this.state.agentOwnsApp && !this.running) {
       if (this.writeBaseline()) {
         this.state.lastGoodCommit = this.ws.snapshot('base')
@@ -189,6 +286,26 @@ export class Generator {
       }
     }
     this.scheduleAgent()
+  }
+
+  /**
+   * Choix automatique du template : quand le type de projet devient clair pendant l'appel, on passe au template
+   * le plus adapté, tant que l'IA n'a pas encore pris la main et que les deux templates partagent le même projet
+   * (cas des templates intégrés, qui étendent tous le socle).
+   */
+  private maybeSwitchTemplate(): void {
+    if (!this.ws || !this.brief?.typeProjet || this.templateChoisi !== 'auto' || this.state.agentOwnsApp) return
+    const best = selectTemplate(this.deps.templates(), this.brief.typeProjet)
+    if (!best || best.id === this.ws.template.id) return
+    if (!sameProject(best, this.ws.template)) {
+      this.deps.log(`Template « ${best.name} » plus adapté, mais il s'agit d'un autre projet : on garde « ${this.ws.template.name} » pour ce rendez-vous.`)
+      return
+    }
+    this.ws.template = best
+    this.state.templateId = best.id
+    this.state.templateName = best.name
+    this.deps.log(`Template adapté au projet : « ${best.name} »`, 'success')
+    this.emit()
   }
 
   private agentAvailable(): boolean {
@@ -283,6 +400,7 @@ export class Generator {
     } else {
       this.agentFailures = 0
       this.state.lastGoodCommit = ws.snapshot(`ok-${kind}`)
+      this.addVersion(this.state.lastGoodCommit, labels[kind].replace(/^IA : /, ''))
       this.state.agentOwnsApp = true
       this.lastAgentSignature = signature
       this.lastAgentBriefState = briefState
@@ -321,12 +439,27 @@ export class Generator {
     }
     const step = this.addStep('verification', 'Vérification finale (compilation)')
     const check = await this.check()
-    if (check.ok) this.endStep(step, 'ok', 'La maquette compile')
-    else {
+    if (check.ok) {
+      this.endStep(step, 'ok', 'La maquette compile')
+      this.state.lastGoodCommit = this.ws.snapshot('finale')
+      this.addVersion(this.state.lastGoodCommit, 'Version montrée en fin de rendez-vous')
+    } else {
       this.ws.restore(this.state.lastGoodCommit!)
       this.endStep(step, 'echec', 'Erreur détectée : retour à la dernière version valide')
     }
     this.emit()
+  }
+
+  /** Revient à une version enregistrée (pendant ou après le rendez-vous). */
+  async restoreVersion(id: string): Promise<void> {
+    if (!this.ws) return
+    this.abort?.abort()
+    if (this.running) await this.running.catch(() => {})
+    this.ws.restore(id)
+    this.state.lastGoodCommit = id
+    const v = this.state.versions.find((x) => x.id === id)
+    const step = this.addStep('retour_arriere', `Retour à « ${v?.label ?? id} »`)
+    this.endStep(step, 'ok', id)
   }
 
   async rollback(target: 'planB' | 'lastGood'): Promise<void> {
@@ -348,9 +481,12 @@ export class Generator {
   async stop(): Promise<void> {
     this.stopped = true
     if (this.pendingTimer) clearTimeout(this.pendingTimer)
+    this.pendingTimer = undefined
     this.abort?.abort()
     if (this.running) await this.running.catch(() => {})
     this.preview?.stop()
+    this.preview = undefined
+    this.state.previewUrl = undefined
   }
 
   get workspaceDir(): string | undefined {

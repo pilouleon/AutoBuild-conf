@@ -29,7 +29,7 @@ process.stdin.on('end', () => {
   if (args.includes('--json-schema')) {
     const schema = JSON.parse(args[args.indexOf('--json-schema') + 1])
     const out = schema.properties.updates
-      ? { updates: [], typeProjet: 'erp', typeProjetPreuve: { segmentId: 'S1', citation: 'on veut un ERP pour nos stocks' }, resume: 'Un ERP', questionsSuggerees: [] }
+      ? { updates: [], typeProjet: 'erp', typeProjetPreuve: { segmentId: 'S1', citation: 'on veut un ERP pour nos stocks' }, resume: 'Un ERP', nouveauxChamps: [] }
       : { reponse: 'OK' }
     console.log(JSON.stringify({ type: 'result', subtype: 'success', is_error: false, result: '', structured_output: out, total_cost_usd: 0.01 }))
     return

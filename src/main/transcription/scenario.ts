@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { BriefPatch } from '@shared/brief/schema'
-import type { ScenarioInfo, Speaker } from '@shared/types'
+import type { Contact, ScenarioInfo, Speaker } from '@shared/types'
 import type { RawSegment } from './types'
 
 export interface Scenario {
@@ -14,6 +14,8 @@ export interface Scenario {
   titre: string
   description: string
   prospect: { nom: string; url: string; notes?: string }
+  /** Personnes côté prospect (fictives). */
+  interlocuteurs?: Contact[]
   /** t = secondes depuis le début ; d = durée de parole en secondes. */
   segments: { t: number; d: number; speaker: Speaker; text: string }[]
   /** Patchs rejoués quand le transcript atteint le segment indiqué (index 1-based, = id S<n>). */

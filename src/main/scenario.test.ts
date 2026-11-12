@@ -26,7 +26,11 @@ describe('scénarios de démonstration', () => {
       brief = res.brief
     }
     expect(brief.typeProjet).toBe('app-metier')
-    expect(progress(brief).pct).toBeGreaterThan(80)
+    // Sans les infos du site (ajoutées à la préparation), le brief est rempli aux trois quarts.
+    expect(progress(brief).pct).toBeGreaterThanOrEqual(75)
+    // Infos ajoutées en cours de route : celles du type de projet et celles demandées par l'IA.
+    expect(brief.champsAjoutes.map((f) => f.id)).toEqual(expect.arrayContaining(['metier_validation', 'nb_chantiers_an', 'saisies_hors_ligne']))
+    expect(brief.champs.nb_chantiers_an.status).toBe('obtenu')
     const app = buildAppConfig({ brief, nomEntreprise: 'Ternovia', seed: 'ternovia' })
     expect(app.entites.map((e) => e.label)).toEqual(expect.arrayContaining(['Chantier', 'Pointage', 'Engin', 'Situation de travaux']))
   })

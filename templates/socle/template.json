@@ -1,14 +1,140 @@
 {
   "id": "socle",
-  "name": "Socle générique",
+  "name": "Socle (générique)",
   "version": "0.1.0",
-  "description": "Base générique pilotée par src/mockup/app.json : connexion à la marque du prospect, tableau de bord, listes, kanban, fiches. Sert de repli pour tous les types de projet tant que les templates métier ne sont pas créés.",
-  "projectTypes": ["*"],
+  "description": "Base commune des templates intégrés (kit d'interface, pages génériques, bibliothèque de pages). Utilisée telle quelle quand aucun template ne correspond au projet.",
+  "projectTypes": [
+    "*"
+  ],
   "fallback": true,
   "stack": "Vite + React + TypeScript + Tailwind CSS 4",
-  "dev": { "script": "node_modules/vite/bin/vite.js", "args": ["--port", "{port}", "--strictPort", "--host", "127.0.0.1"] },
-  "check": { "script": "node_modules/typescript/bin/tsc", "args": ["--noEmit", "-p", "tsconfig.json"] },
+  "dev": {
+    "script": "node_modules/vite/bin/vite.js",
+    "args": [
+      "--port",
+      "{port}",
+      "--strictPort",
+      "--host",
+      "127.0.0.1"
+    ]
+  },
+  "check": {
+    "script": "node_modules/typescript/bin/tsc",
+    "args": [
+      "--noEmit",
+      "-p",
+      "tsconfig.json"
+    ]
+  },
   "mockupDir": "src/mockup",
   "brandAssetsDir": "public/brand",
-  "routes": "navigation de src/mockup/app.json (#/<id>)"
+  "routes": "navigation de src/mockup/app.json (#/<id>)",
+  "couleur": "#475569",
+  "layout": "sidebar",
+  "pages": [
+    {
+      "id": "tableau",
+      "label": "Tableau de bord",
+      "description": "Indicateurs et éléments récents.",
+      "niveau": "base",
+      "kind": "tableau-de-bord",
+      "declencheurs": [],
+      "icone": "dashboard"
+    },
+    {
+      "id": "suivi",
+      "label": "Suivi des étapes",
+      "description": "Avancement des éléments étape par étape.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "étape",
+        "validation",
+        "workflow",
+        "circuit"
+      ],
+      "cible": "suivi",
+      "icone": "list"
+    },
+    {
+      "id": "documents",
+      "label": "Documents",
+      "description": "Documents classés par dossier.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "document",
+        "ged",
+        "pièce jointe"
+      ],
+      "cible": "documents",
+      "icone": "file"
+    },
+    {
+      "id": "planning",
+      "label": "Planning",
+      "description": "Calendrier de la semaine par personne ou ressource, à partir des éléments datés.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "planning",
+        "agenda",
+        "calendrier",
+        "affectation",
+        "planifier",
+        "tournée"
+      ],
+      "cible": "planning",
+      "icone": "calendar"
+    },
+    {
+      "id": "reporting",
+      "label": "Reporting",
+      "description": "Graphiques et tableaux d’analyse construits sur les données de la maquette.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "reporting",
+        "statistique",
+        "indicateur",
+        "analyse",
+        "pilotage",
+        "kpi"
+      ],
+      "cible": "reporting",
+      "icone": "chart"
+    },
+    {
+      "id": "droits",
+      "label": "Utilisateurs et droits",
+      "description": "Matrice des rôles et des droits par module.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "droit",
+        "rôle",
+        "permission",
+        "profil utilisateur",
+        "habilitation",
+        "accès"
+      ],
+      "cible": "droits",
+      "icone": "shield"
+    },
+    {
+      "id": "parametres",
+      "label": "Paramètres",
+      "description": "Fiche société, numérotation, préférences.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "paramétrage",
+        "paramètre",
+        "configuration",
+        "réglage"
+      ],
+      "cible": "parametres",
+      "icone": "settings"
+    }
+  ]
 }

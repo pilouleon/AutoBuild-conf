@@ -1,0 +1,132 @@
+{
+  "id": "extranet",
+  "name": "Extranet / portail client",
+  "description": "Espace sécurisé pour les clients, adhérents ou partenaires : suivi, commandes, documents, demandes.",
+  "projectTypes": [
+    "extranet",
+    "site-institutionnel",
+    "marketplace-annuaire"
+  ],
+  "extends": "socle",
+  "layout": "topnav",
+  "couleur": "#0f766e",
+  "pages": [
+    {
+      "id": "accueil",
+      "label": "Accueil",
+      "description": "Page d’accueil de l’espace : synthèse, raccourcis, dernières nouveautés.",
+      "niveau": "base",
+      "kind": "page",
+      "declencheurs": [],
+      "cible": "accueil-portail",
+      "icone": "home"
+    },
+    {
+      "id": "commandes",
+      "label": "Mes commandes",
+      "description": "Suivi des commandes et des livraisons.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "commande",
+        "livraison",
+        "suivi de commande",
+        "achat"
+      ],
+      "cible": "Commande",
+      "icone": "cart"
+    },
+    {
+      "id": "demandes",
+      "label": "Mes demandes",
+      "description": "Tickets et échanges avec l’équipe.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "demande",
+        "ticket",
+        "réclamation",
+        "support",
+        "sav",
+        "question",
+        "incident"
+      ],
+      "cible": "tickets",
+      "icone": "message"
+    },
+    {
+      "id": "documents",
+      "label": "Mes documents",
+      "description": "Documents à télécharger : contrats, factures, attestations.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "document",
+        "contrat",
+        "attestation",
+        "télécharger",
+        "facture",
+        "certificat"
+      ],
+      "cible": "documents",
+      "icone": "file"
+    },
+    {
+      "id": "factures",
+      "label": "Factures",
+      "description": "Factures et règlements.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "facture",
+        "règlement",
+        "paiement",
+        "cotisation"
+      ],
+      "cible": "Facture",
+      "icone": "invoice"
+    },
+    {
+      "id": "annuaire",
+      "label": "Annuaire",
+      "description": "Annuaire des membres ou du réseau.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "annuaire",
+        "membre",
+        "adhérent",
+        "réseau",
+        "partenaire"
+      ],
+      "cible": "annuaire",
+      "icone": "users"
+    },
+    {
+      "id": "actualites",
+      "label": "Actualités",
+      "description": "Actualités et informations du réseau.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "actualité",
+        "information",
+        "communication",
+        "newsletter",
+        "événement"
+      ],
+      "cible": "actualites",
+      "icone": "news"
+    },
+    {
+      "id": "compte",
+      "label": "Mon compte",
+      "description": "Profil, contacts et préférences.",
+      "niveau": "base",
+      "kind": "page",
+      "declencheurs": [],
+      "cible": "parametres",
+      "icone": "user"
+    }
+  ]
+}

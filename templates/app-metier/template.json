@@ -1,0 +1,178 @@
+{
+  "id": "app-metier",
+  "name": "Application métier",
+  "description": "Dossiers ou chantiers, circuit de validation, planning, documents : l’outil qui informatise un processus métier.",
+  "projectTypes": [
+    "app-metier",
+    "planning-rdv",
+    "gestion-documentaire",
+    "app-mobile-terrain",
+    "configurateur-devis"
+  ],
+  "extends": "socle",
+  "layout": "sidebar",
+  "couleur": "#3730a3",
+  "pages": [
+    {
+      "id": "tableau",
+      "label": "Tableau de bord",
+      "description": "Indicateurs et éléments à traiter.",
+      "niveau": "base",
+      "kind": "tableau-de-bord",
+      "declencheurs": [],
+      "icone": "dashboard"
+    },
+    {
+      "id": "suivi",
+      "label": "Suivi des étapes",
+      "description": "Avancement de chaque dossier dans son circuit, étape par étape.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "étape",
+        "validation",
+        "workflow",
+        "circuit",
+        "avancement",
+        "suivi",
+        "processus"
+      ],
+      "cible": "suivi",
+      "icone": "list"
+    },
+    {
+      "id": "planning",
+      "label": "Planning",
+      "description": "Calendrier de la semaine par personne ou ressource.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "planning",
+        "agenda",
+        "calendrier",
+        "affectation",
+        "planifier",
+        "tournée"
+      ],
+      "cible": "planning",
+      "icone": "calendar"
+    },
+    {
+      "id": "interventions",
+      "label": "Interventions",
+      "description": "Interventions terrain, techniciens, comptes rendus.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "intervention",
+        "technicien",
+        "maintenance",
+        "dépannage",
+        "sav"
+      ],
+      "cible": "Intervention",
+      "icone": "wrench"
+    },
+    {
+      "id": "documents",
+      "label": "Documents",
+      "description": "Documents classés par dossier, versions et partage.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "document",
+        "pièce jointe",
+        "pv",
+        "procès-verbal",
+        "rapport",
+        "ged",
+        "photo",
+        "attestation"
+      ],
+      "cible": "documents",
+      "icone": "file"
+    },
+    {
+      "id": "clients",
+      "label": "Clients",
+      "description": "Clients et donneurs d’ordre.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "donneur d’ordre",
+        "donneurs d’ordre",
+        "maître d’ouvrage",
+        "maîtres d’ouvrage",
+        "fiche client",
+        "portefeuille client"
+      ],
+      "cible": "Client",
+      "icone": "building"
+    },
+    {
+      "id": "equipe",
+      "label": "Équipe",
+      "description": "Collaborateurs, disponibilités, compétences.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "collaborateur",
+        "compétence",
+        "habilitation",
+        "gestion du personnel",
+        "fiche salarié"
+      ],
+      "cible": "Collaborateur",
+      "icone": "users"
+    },
+    {
+      "id": "reporting",
+      "label": "Reporting",
+      "description": "Graphiques et tableaux d’analyse construits sur les données de la maquette.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "reporting",
+        "statistique",
+        "indicateur",
+        "analyse",
+        "pilotage",
+        "kpi"
+      ],
+      "cible": "reporting",
+      "icone": "chart"
+    },
+    {
+      "id": "droits",
+      "label": "Utilisateurs et droits",
+      "description": "Matrice des rôles et des droits par module.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "droit",
+        "rôle",
+        "permission",
+        "profil utilisateur",
+        "habilitation",
+        "accès"
+      ],
+      "cible": "droits",
+      "icone": "shield"
+    },
+    {
+      "id": "parametres",
+      "label": "Paramètres",
+      "description": "Fiche société, numérotation, préférences.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "paramétrage",
+        "paramètre",
+        "configuration",
+        "réglage"
+      ],
+      "cible": "parametres",
+      "icone": "settings"
+    }
+  ]
+}

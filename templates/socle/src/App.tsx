@@ -8,6 +8,7 @@ import { app, brand, getEntity } from './mockup'
 import { Dashboard } from './pages/Dashboard'
 import { EntityPage } from './pages/EntityPage'
 import { customPages } from './pages/custom/registry'
+import { libraryPages } from './pages/library/registry'
 
 export default function App() {
   const [logged, setLogged] = useState(() => sessionStorage.getItem('maquette-connecte') === '1')
@@ -40,9 +41,12 @@ export default function App() {
     const entity = getEntity(item.cible)
     if (entity) content = <EntityPage key={entity.id} entity={entity} navId={item.id} itemId={itemId} />
   }
-  if (item?.type === 'page' && item.cible && customPages[item.cible]) {
-    const Page = customPages[item.cible]
-    content = <Page itemId={itemId} />
+  if (item?.type === 'page' && item.cible) {
+    // Page sur mesure d'abord (elle peut remplacer une page de la bibliothèque du même id), puis bibliothèque.
+    const Custom = customPages[item.cible]
+    const Library = libraryPages[item.cible]
+    if (Custom) content = <Custom key={item.id} itemId={itemId} />
+    else if (Library) content = <Library key={item.id} itemId={itemId} source={item.source} />
   }
 
   return (

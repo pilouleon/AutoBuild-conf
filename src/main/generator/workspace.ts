@@ -16,7 +16,8 @@ export class Workspace {
 
   constructor(
     readonly dir: string,
-    readonly template: LoadedTemplate
+    /** Modifiable : on peut changer de template en cours d'appel s'il partage le même projet. */
+    public template: LoadedTemplate
   ) {
     this.snapDir = join(dir, '.autobuild', 'instantanes')
   }
@@ -33,17 +34,31 @@ export class Workspace {
         return !SKIP.has(first)
       }
     })
+    // Template « manifeste » : ses fichiers propres sont superposés au projet de base.
+    if (template.ownDir !== template.dir) {
+      cpSync(template.ownDir, dir, { recursive: true, filter: (src) => !SKIP.has(relative(template.ownDir, src).split(sep)[0]) })
+    }
     const ws = new Workspace(dir, template)
     mkdirSync(ws.snapDir, { recursive: true })
-    // macOS : les fichiers copiés depuis une application téléchargée gardent l'attribut de quarantaine,
-    // qui peut bloquer les binaires natifs (Vite, Tailwind, TypeScript). On le retire de la maquette.
-    if (process.platform === 'darwin') {
-      try {
-        execFileSync('xattr', ['-dr', 'com.apple.quarantine', dir], { stdio: 'ignore' })
-      } catch {
-        /* attribut absent */
-      }
-    }
+    unquarantine(dir)
+    return ws
+  }
+
+  /** Rouvre une maquette existante (rendez-vous préparé à l'avance, ou RDV passé). */
+  static open(dir: string, template: LoadedTemplate): Workspace {
+    const ws = new Workspace(dir, template)
+    mkdirSync(ws.snapDir, { recursive: true })
+    ws.counter = ws.listSnapshots().length
+    return ws
+  }
+
+  /** Copie une maquette existante (reprise pour un R2). */
+  static duplicate(root: string, name: string, fromDir: string, template: LoadedTemplate): Workspace {
+    const dir = uniqueDir(root, name)
+    cpSync(fromDir, dir, { recursive: true, filter: (src) => relative(fromDir, src).split(sep)[0] !== '.autobuild' && !relative(fromDir, src).startsWith('.vite-cache') })
+    const ws = new Workspace(dir, template)
+    mkdirSync(ws.snapDir, { recursive: true })
+    unquarantine(dir)
     return ws
   }
 
@@ -88,6 +103,19 @@ export class Workspace {
 
   listSnapshots(): string[] {
     return existsSync(this.snapDir) ? readdirSync(this.snapDir).sort() : []
+  }
+}
+
+/**
+ * macOS : les fichiers copiés depuis une application téléchargée gardent l'attribut de quarantaine,
+ * qui peut bloquer les binaires natifs (Vite, Tailwind, TypeScript). On le retire de la maquette.
+ */
+function unquarantine(dir: string): void {
+  if (process.platform !== 'darwin') return
+  try {
+    execFileSync('xattr', ['-dr', 'com.apple.quarantine', dir], { stdio: 'ignore' })
+  } catch {
+    /* attribut absent */
   }
 }
 

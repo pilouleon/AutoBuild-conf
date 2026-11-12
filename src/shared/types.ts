@@ -72,6 +72,7 @@ export interface GenerationStep {
 export interface GenerationState {
   status: 'inactif' | 'preparation' | 'pret' | 'en_cours' | 'erreur'
   templateId?: string
+  templateName?: string
   workspace?: string
   previewUrl?: string
   lastGoodCommit?: string
@@ -79,27 +80,140 @@ export interface GenerationState {
   /** true dès qu'une étape IA a réussi : l'IA est alors propriétaire de app.json. */
   agentOwnsApp: boolean
   steps: GenerationStep[]
+  /** Versions enregistrées (plan B, étapes IA réussies, version finale) : on peut revenir à chacune. */
+  versions: MaquetteVersion[]
   /** Dernière activité de l'agent (fichier modifié, etc.), pour la fenêtre checklist. */
   activity?: string
 }
 
-export type SessionPhase = 'accueil' | 'preparation' | 'pret' | 'ecoute' | 'finalisation' | 'termine'
+export type SessionPhase = 'inactif' | 'preparation' | 'pret' | 'ecoute' | 'finalisation' | 'termine'
 
+/** État du rendez-vous en direct (une seule session à la fois). */
 export interface SessionState {
   phase: SessionPhase
+  rdvId?: string
   prospect: { nom: string; url: string; notes: string }
   brand?: Brand
   consentementAnnonce: boolean
   startedAt?: number
+  /** Écoute en pause (le son n'est plus transcrit). */
+  pause?: boolean
   transcript: TranscriptSegment[]
   /** Texte provisoire (mode Live) affiché en gris avant validation. */
   interim: Partial<Record<Speaker, string>>
   brief: Brief
   briefStatus: { running: boolean; lastRunAt?: number; lastError?: string; runs: number; rejected: number; provider: string }
-  transcription: { mode: TranscriptionMode; status: 'arret' | 'actif' | 'erreur' | 'simulation'; error?: string; levels: Record<Speaker, number> }
+  transcription: {
+    mode: TranscriptionMode
+    status: 'arret' | 'actif' | 'erreur' | 'simulation'
+    error?: string
+    levels: Record<Speaker, number>
+    /** Problème détecté pendant l'écoute (plus de son du prospect, transcription bloquée…). */
+    alerte?: string
+  }
   generation: GenerationState
   logs: LogEntry[]
   simulation?: { scenarioId: string; speed: number; briefRejoue?: boolean }
+}
+
+// ── Données enregistrées sur le poste ────────────────────────────
+
+export interface Contact {
+  nom: string
+  fonction?: string
+  email?: string
+}
+
+export interface Prospect {
+  id: string
+  nom: string
+  siteUrl?: string
+  secteur?: string
+  interlocuteurs: Contact[]
+  brand?: Brand
+  notes?: string
+  creeLe: number
+  majLe: number
+}
+
+export type RdvStatut = 'a_preparer' | 'preparation' | 'pret' | 'erreur' | 'en_cours' | 'termine'
+export type RdvContexte = 'lead' | 'appel_offres' | 'recommandation' | 'client'
+
+export interface PreparationEtape {
+  id: 'identite' | 'template' | 'maquette' | 'planb'
+  label: string
+  statut: 'attente' | 'en_cours' | 'ok' | 'echec'
+  detail?: string
+}
+
+export interface MaquetteVersion {
+  id: string
+  label: string
+  at: number
+}
+
+export interface Rdv {
+  id: string
+  prospectId: string
+  /** « Premier rendez-vous », « Second rendez-vous »… */
+  titre: string
+  /** Date et heure de début (ISO). */
+  debut: string
+  dureeMin: number
+  lienVisio?: string
+  contexte: RdvContexte
+  notes: string
+  commercial: string
+  interlocuteurs: Contact[]
+  /** 'auto' : Claude choisit pendant l'appel ; sinon l'id du template imposé. */
+  templateChoisi: string
+  statut: RdvStatut
+  preparation: { etapes: PreparationEtape[]; le?: number; erreur?: string }
+  brand?: Brand
+  secteur?: string
+  vocabulaire?: string[]
+  /** Type de projet deviné avant l'appel (notes, site) : sert seulement à choisir le template de départ. */
+  typePressenti?: string | null
+  brief: Brief
+  transcript: TranscriptSegment[]
+  startedAt?: number
+  endedAt?: number
+  maquette: {
+    workspace?: string
+    templateId?: string
+    templateName?: string
+    planB?: string
+    lastGood?: string
+    agentOwnsApp?: boolean
+    steps: GenerationStep[]
+    versions: MaquetteVersion[]
+  }
+  /** RDV précédent dont on reprend la maquette (R2…). */
+  repriseDe?: string
+  /** Démo : scénario rejoué à la place de l'audio. */
+  scenarioId?: string
+  logs?: LogEntry[]
+  creeLe: number
+  majLe: number
+}
+
+export interface AppData {
+  prospects: Prospect[]
+  rdvs: Rdv[]
+}
+
+export interface NouveauRdvInput {
+  prospectId?: string
+  prospectNom: string
+  siteUrl: string
+  debut: string
+  dureeMin: number
+  lienVisio?: string
+  contexte: RdvContexte
+  notes: string
+  interlocuteurs: Contact[]
+  templateChoisi: string
+  repriseDe?: string
 }
 
 export type TranscriptionMode = 'tronçons' | 'live'
@@ -130,6 +244,8 @@ export interface Settings {
   templatesDir: string
   workspacesDir: string
   generation: { agentEnabled: boolean; maxAgentMinutes: number }
+  profil: { nom: string; fonction: string }
+  widget: { bounds?: { x: number; y: number; width: number; height: number } }
 }
 
 export interface KeysStatus {
@@ -148,6 +264,21 @@ export interface ScenarioInfo {
   dureeSec: number
 }
 
+export interface TemplatePage {
+  id: string
+  label: string
+  description: string
+  /** base : toujours présente ; option : activée si le prospect en parle. */
+  niveau: 'base' | 'option'
+  /** Entité générique (liste, kanban, fiche) ou page sur mesure de la bibliothèque. */
+  kind: 'tableau-de-bord' | 'entite' | 'page'
+  /** Id de l'entité (préréglage) ou du composant de page. */
+  cible?: string
+  /** Mots qui déclenchent l'activation de la page. */
+  declencheurs: string[]
+  icone?: string
+}
+
 export interface TemplateInfo {
   id: string
   name: string
@@ -156,4 +287,7 @@ export interface TemplateInfo {
   source: 'integre' | 'agence'
   ready: boolean
   problem?: string
+  layout?: 'sidebar' | 'topnav'
+  couleur?: string
+  pages: TemplatePage[]
 }

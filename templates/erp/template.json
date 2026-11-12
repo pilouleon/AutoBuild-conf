@@ -1,0 +1,230 @@
+{
+  "id": "erp",
+  "name": "ERP / gestion commerciale",
+  "description": "Ventes, achats, stocks multi-dépôts, facturation et production, avec tableau de bord de direction.",
+  "projectTypes": [
+    "erp",
+    "crm",
+    "pilotage-bi",
+    "ecommerce-b2b"
+  ],
+  "extends": "socle",
+  "layout": "sidebar",
+  "couleur": "#1e3a5f",
+  "pages": [
+    {
+      "id": "tableau",
+      "label": "Tableau de bord",
+      "description": "Indicateurs, graphiques et derniers mouvements.",
+      "niveau": "base",
+      "kind": "tableau-de-bord",
+      "declencheurs": [],
+      "icone": "dashboard"
+    },
+    {
+      "id": "clients",
+      "label": "Clients",
+      "description": "Fiches clients, contacts, chiffre d’affaires.",
+      "niveau": "base",
+      "kind": "entite",
+      "declencheurs": [],
+      "cible": "Client",
+      "icone": "building"
+    },
+    {
+      "id": "devis",
+      "label": "Devis",
+      "description": "Éditeur de devis avec lignes, remises, TVA et aperçu PDF.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "devis",
+        "chiffrage",
+        "proposition commerciale",
+        "tarif",
+        "offre de prix"
+      ],
+      "cible": "devis",
+      "icone": "file"
+    },
+    {
+      "id": "commandes",
+      "label": "Commandes",
+      "description": "Commandes clients, préparation et livraison.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "commande",
+        "bon de commande",
+        "livraison",
+        "expédition"
+      ],
+      "cible": "Commande",
+      "icone": "cart"
+    },
+    {
+      "id": "factures",
+      "label": "Factures",
+      "description": "Factures, échéances, relances et avoirs.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "facture",
+        "facturation",
+        "avoir",
+        "relance",
+        "encaissement",
+        "paiement",
+        "situation"
+      ],
+      "cible": "Facture",
+      "icone": "invoice"
+    },
+    {
+      "id": "articles",
+      "label": "Articles",
+      "description": "Catalogue d’articles, tarifs et références.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "article",
+        "produit",
+        "catalogue",
+        "référence",
+        "nomenclature"
+      ],
+      "cible": "Article",
+      "icone": "box"
+    },
+    {
+      "id": "stocks",
+      "label": "Stocks",
+      "description": "Stocks par dépôt, alertes de réassort et transferts.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "stock",
+        "dépôt",
+        "entrepôt",
+        "inventaire",
+        "réassort",
+        "magasin"
+      ],
+      "cible": "stocks",
+      "icone": "layers"
+    },
+    {
+      "id": "fournisseurs",
+      "label": "Fournisseurs",
+      "description": "Fournisseurs, délais et contacts.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "fournisseur",
+        "achat",
+        "approvisionnement",
+        "sous-traitant"
+      ],
+      "cible": "Fournisseur",
+      "icone": "truck"
+    },
+    {
+      "id": "production",
+      "label": "Production",
+      "description": "Ordres de fabrication, ateliers, avancement.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "production",
+        "fabrication",
+        "atelier",
+        "ordre de fabrication",
+        "usine"
+      ],
+      "cible": "Ordre de fabrication",
+      "icone": "factory"
+    },
+    {
+      "id": "opportunites",
+      "label": "Opportunités",
+      "description": "Pipeline commercial en kanban.",
+      "niveau": "option",
+      "kind": "entite",
+      "declencheurs": [
+        "opportunité",
+        "pipeline",
+        "prospect",
+        "crm",
+        "affaire"
+      ],
+      "cible": "Opportunité",
+      "icone": "star"
+    },
+    {
+      "id": "planning",
+      "label": "Planning",
+      "description": "Calendrier de la semaine par personne ou ressource, à partir des éléments datés.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "planning",
+        "agenda",
+        "calendrier",
+        "affectation",
+        "planifier",
+        "tournée"
+      ],
+      "cible": "planning",
+      "icone": "calendar"
+    },
+    {
+      "id": "reporting",
+      "label": "Reporting",
+      "description": "Graphiques et tableaux d’analyse construits sur les données de la maquette.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "reporting",
+        "statistique",
+        "indicateur",
+        "analyse",
+        "pilotage",
+        "kpi"
+      ],
+      "cible": "reporting",
+      "icone": "chart"
+    },
+    {
+      "id": "droits",
+      "label": "Utilisateurs et droits",
+      "description": "Matrice des rôles et des droits par module.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "droit",
+        "rôle",
+        "permission",
+        "profil utilisateur",
+        "habilitation",
+        "accès"
+      ],
+      "cible": "droits",
+      "icone": "shield"
+    },
+    {
+      "id": "parametres",
+      "label": "Paramètres",
+      "description": "Fiche société, numérotation, préférences.",
+      "niveau": "option",
+      "kind": "page",
+      "declencheurs": [
+        "paramétrage",
+        "paramètre",
+        "configuration",
+        "réglage"
+      ],
+      "cible": "parametres",
+      "icone": "settings"
+    }
+  ]
+}
