@@ -11,7 +11,8 @@ import { applyPatch, applySiteInfo, setManualField } from '@shared/brief/merge'
 import { emptyBrief, normalizeBrief } from '@shared/brief/schema'
 import { guessProjectType } from '@shared/catalog'
 import { slugify } from '@shared/mockup/baseline'
-import type { Brand, KeysStatus, LogEntry, LogLevel, NouveauRdvInput, PreparationEtape, Rdv, SessionState, Settings, Speaker, TranscriptSegment } from '@shared/types'
+import type { AppConfig } from '@shared/mockup/types'
+import type { Brand, KeysStatus, LogEntry, LogLevel, MaquettePage, NouveauRdvInput, PreparationEtape, Rdv, SessionState, Settings, Speaker, TranscriptSegment } from '@shared/types'
 import { claudeCodeSiteAnalyzer, claudeSiteAnalyzer, geminiSiteAnalyzer } from './brand/analyze'
 import { type ExtractOptions, extractBrand } from './brand/extract'
 import { type BriefProviderImpl, ClaudeBriefProvider, ClaudeCodeBriefProvider, GeminiBriefProvider, ScenarioBriefProvider } from './brief/providers'
@@ -700,6 +701,27 @@ export class Session {
     const url = await preview.start()
     this.viewer = { rdvId, preview, url }
     return url
+  }
+
+  /** Pages de la maquette d'un rendez-vous (navigation de son app.json). */
+  maquettePages(rdvId: string): MaquettePage[] {
+    const rdv = this.deps.store.rdv(rdvId)
+    const dir = rdv?.maquette.workspace
+    if (!rdv || !dir) return []
+    const template = this.templateFor(rdv)
+    try {
+      const app = JSON.parse(readFileSync(join(dir, template?.mockupDir ?? 'src/mockup', 'app.json'), 'utf8')) as AppConfig
+      const library = new Set(['planning', 'devis', 'stocks', 'reporting', 'droits', 'parametres', 'documents', 'actualites', 'annuaire', 'accueil-portail', 'tickets', 'suivi'])
+      const customDir = join(dir, 'src', 'pages', 'custom')
+      return app.navigation.map((n) => ({
+        id: n.id,
+        label: n.label,
+        icone: n.icone,
+        origine: n.type === 'tableau-de-bord' ? 'tableau-de-bord' : n.type === 'entite' ? 'entite' : n.cible && library.has(n.cible) && !existsSync(join(customDir, `${n.cible}.tsx`)) ? 'bibliotheque' : 'sur-mesure'
+      }))
+    } catch {
+      return []
+    }
   }
 
   stopViewer(): void {

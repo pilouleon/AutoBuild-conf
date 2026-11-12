@@ -37,6 +37,8 @@ let store: Store
 let session: Session
 type WidgetMode = 'ouvert' | 'reduit'
 let widgetMode: WidgetMode = 'ouvert'
+/** L'utilisateur quitte l'application (Cmd+Q, menu) : les fenêtres se ferment même pendant un rendez-vous. */
+let quitting = false
 
 function loadRenderer(win: BrowserWindow, page: 'index' | 'widget'): void {
   const devUrl = process.env.ELECTRON_RENDERER_URL
@@ -71,12 +73,14 @@ function createMainWindow(): void {
     title: 'AutoBuild',
     backgroundColor: '#f6f6f4',
     show: false,
-    webPreferences: { preload, sandbox: false, contextIsolation: true, backgroundThrottling: false }
+    // La capture audio du rendez-vous tourne dans cette fenêtre, même cachée et sans clic récent.
+    webPreferences: { preload, sandbox: false, contextIsolation: true, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required' }
   })
   mainWindow.once('ready-to-show', () => mainWindow?.show())
   loadRenderer(mainWindow, 'index')
   // Pendant un rendez-vous, fermer l'interface la cache seulement : l'écoute continue dans le widget.
   mainWindow.on('close', (e) => {
+    if (quitting) return
     const live = session?.state.phase === 'ecoute' || session?.state.phase === 'finalisation'
     if (live) {
       e.preventDefault()
@@ -338,7 +342,12 @@ function registerIpc(): void {
     mainWindow?.hide()
   })
   ipcMain.handle('live:pause', (_e, v: boolean) => session.setPause(v))
-  ipcMain.handle('live:finish', () => session.finish())
+  ipcMain.handle('live:finish', async (_e, presenter?: boolean) => {
+    const id = session.state.rdvId
+    await session.finish()
+    // La maquette s'ouvre en plein écran, prête à être partagée dans la visio.
+    if (presenter && id) await present(id).catch(() => {})
+  })
   ipcMain.handle('live:close', () => session.close())
   ipcMain.handle('live:speed', (_e, n: number) => session.setSimulationSpeed(n))
   ipcMain.handle('live:brief-mode', (_e, rejoue: boolean) => session.setSimulationBriefMode(rejoue))
@@ -365,6 +374,7 @@ function registerIpc(): void {
 
   // Maquettes.
   ipcMain.handle('maquette:view', (_e, rdvId: string) => session.viewMaquette(rdvId))
+  ipcMain.handle('maquette:pages', (_e, rdvId: string) => session.maquettePages(rdvId))
   ipcMain.handle('maquette:present', (_e, rdvId: string) => present(rdvId))
   ipcMain.handle('maquette:restore', (_e, rdvId: string, versionId: string) => session.restoreVersion(rdvId, versionId))
   ipcMain.handle('maquette:folder', (_e, rdvId: string) => {
@@ -458,6 +468,10 @@ app.whenReady().then(() => {
     if (!mainWindow) createMainWindow()
     else showMain()
   })
+})
+
+app.on('before-quit', () => {
+  quitting = true
 })
 
 app.on('window-all-closed', () => {

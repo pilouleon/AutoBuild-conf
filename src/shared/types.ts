@@ -79,6 +79,8 @@ export interface GenerationState {
   planBCommit?: string
   /** true dès qu'une étape IA a réussi : l'IA est alors propriétaire de app.json. */
   agentOwnsApp: boolean
+  /** L'IA de génération peut-elle intervenir (activée, accès à Claude, pas coupée après des échecs) ? */
+  agentDisponible?: boolean
   steps: GenerationStep[]
   /** Versions enregistrées (plan B, étapes IA réussies, version finale) : on peut revenir à chacune. */
   versions: MaquetteVersion[]
@@ -277,6 +279,14 @@ export interface TemplatePage {
   /** Mots qui déclenchent l'activation de la page. */
   declencheurs: string[]
   icone?: string
+}
+
+/** Page de la navigation d'une maquette (lue dans son app.json). */
+export interface MaquettePage {
+  id: string
+  label: string
+  icone: string
+  origine: 'tableau-de-bord' | 'entite' | 'bibliotheque' | 'sur-mesure'
 }
 
 export interface TemplateInfo {

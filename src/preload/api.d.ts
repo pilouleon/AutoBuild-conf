@@ -1,4 +1,4 @@
-import type { AppData, KeysStatus, NouveauRdvInput, Prospect, Rdv, ScenarioInfo, SessionState, Settings, Speaker, TemplateInfo } from '../shared/types'
+import type { AppData, KeysStatus, MaquettePage, NouveauRdvInput, Prospect, Rdv, ScenarioInfo, SessionState, Settings, Speaker, TemplateInfo } from '../shared/types'
 
 export type RdvPatch = Partial<Pick<Rdv, 'debut' | 'dureeMin' | 'lienVisio' | 'contexte' | 'notes' | 'interlocuteurs' | 'templateChoisi'>>
 export type ProspectPatch = Partial<Pick<Prospect, 'nom' | 'siteUrl' | 'secteur' | 'notes' | 'interlocuteurs'>>
@@ -31,7 +31,8 @@ export interface AutoBuildApi {
   openLive(rdvId: string, speed?: number): Promise<void>
   startLive(): Promise<void>
   pauseLive(v: boolean): Promise<void>
-  finishLive(): Promise<void>
+  /** Termine le rendez-vous ; presenter : ouvre ensuite la maquette en plein écran. */
+  finishLive(presenter?: boolean): Promise<void>
   closeLive(): Promise<void>
   setSpeed(speed: number): Promise<void>
   setBriefMode(rejoue: boolean): Promise<void>
@@ -49,6 +50,7 @@ export interface AutoBuildApi {
   onWidgetMode(cb: (mode: 'ouvert' | 'reduit') => void): () => void
 
   viewMaquette(rdvId: string): Promise<string>
+  maquettePages(rdvId: string): Promise<MaquettePage[]>
   presentMaquette(rdvId: string): Promise<void>
   restoreVersion(rdvId: string, versionId: string): Promise<void>
   openMaquetteFolder(rdvId: string): Promise<void>

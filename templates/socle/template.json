@@ -1,6 +1,6 @@
 {
   "id": "socle",
-  "name": "Socle (générique)",
+  "name": "Générique",
   "version": "0.1.0",
   "description": "Base commune des templates intégrés (kit d'interface, pages génériques, bibliothèque de pages). Utilisée telle quelle quand aucun template ne correspond au projet.",
   "projectTypes": [

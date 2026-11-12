@@ -11,7 +11,8 @@ import { customPages } from './pages/custom/registry'
 import { libraryPages } from './pages/library/registry'
 
 export default function App() {
-  const [logged, setLogged] = useState(() => sessionStorage.getItem('maquette-connecte') === '1')
+  // ?apercu : aperçu intégré dans AutoBuild, sans écran de connexion.
+  const [logged, setLogged] = useState(() => sessionStorage.getItem('maquette-connecte') === '1' || new URLSearchParams(window.location.search).has('apercu'))
   const [role, setRole] = useState(app.roleParDefaut || app.roles[0]?.id || '')
   const [routeId, itemId] = useRoute()
 

@@ -117,6 +117,7 @@ export class Generator {
   }
 
   private emit(): void {
+    this.state.agentDisponible = this.agentAvailable()
     this.deps.onState(structuredClone(this.state))
   }
 

@@ -24,7 +24,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
-          checklist: resolve('src/renderer/checklist.html')
+          widget: resolve('src/renderer/widget.html')
         }
       }
     }

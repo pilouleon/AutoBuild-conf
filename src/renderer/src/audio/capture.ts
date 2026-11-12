@@ -40,9 +40,16 @@ export interface CaptureOptions {
   micDeviceId: string
   prospectSource: string
   mode: TranscriptionMode
+  /** Niveaux (0 à 1) pour l'affichage local, toutes les 200 ms. */
+  onLevels?: (levels: Record<Speaker, number>) => void
 }
 
 export class AudioCapture {
+  /** false : test du son avant le rendez-vous (rien n'est envoyé à la transcription). */
+  sending = false
+  /** Libellé du micro utilisé. */
+  micLabel = ''
+  hasProspect = false
   private ctx?: AudioContext
   private channels: Channel[] = []
   private levelTimer?: ReturnType<typeof setInterval>
@@ -57,6 +64,7 @@ export class AudioCapture {
         autoGainControl: true
       }
     })
+    this.micLabel = mic.getAudioTracks()[0]?.label ?? ''
     let prospect: MediaStream | undefined
     try {
       if (o.prospectSource === 'system') {
@@ -72,6 +80,8 @@ export class AudioCapture {
     }
 
     this.ctx = new AudioContext({ sampleRate: SAMPLE_RATE })
+    // Sans geste récent de l'utilisateur, le contexte démarre suspendu : on le relance explicitement.
+    if (this.ctx.state === 'suspended') await this.ctx.resume().catch(() => {})
     const url = URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' }))
     await this.ctx.audioWorklet.addModule(url)
     URL.revokeObjectURL(url)
@@ -80,17 +90,19 @@ export class AudioCapture {
     sink.connect(this.ctx.destination)
 
     const add = (speaker: Speaker, stream: MediaStream) => {
-      const chunker = new VadChunker((c) => window.autobuild.sendChunk(speaker, c.startMs, c.endMs, encodeWav(c.samples, SAMPLE_RATE)), { sampleRate: SAMPLE_RATE })
+      const chunker = new VadChunker((c) => this.sending && window.autobuild.sendChunk(speaker, c.startMs, c.endMs, encodeWav(c.samples, SAMPLE_RATE)), { sampleRate: SAMPLE_RATE })
       const ch: Channel = { speaker, stream, chunker, samples: 0, level: 0 }
       const source = this.ctx!.createMediaStreamSource(stream)
       const node = new AudioWorkletNode(this.ctx!, 'pcm-capture')
       node.port.onmessage = (e: MessageEvent<Float32Array>) => {
         const frame = e.data
-        const atMs = (ch.samples / SAMPLE_RATE) * 1000
-        ch.samples += frame.length
         let peak = 0
         for (let i = 0; i < frame.length; i += 8) peak = Math.max(peak, Math.abs(frame[i]))
         ch.level = Math.max(peak, ch.level * 0.85)
+        // Le temps de la transcription démarre au lancement de l'enregistrement, pas au test du son.
+        if (!this.sending) return
+        const atMs = (ch.samples / SAMPLE_RATE) * 1000
+        ch.samples += frame.length
         if (o.mode === 'live') window.autobuild.sendPcm(speaker, floatToPcm16(frame), atMs)
         else ch.chunker.push(frame)
       }
@@ -101,11 +113,13 @@ export class AudioCapture {
     }
     add('commercial', mic)
     if (prospect) add('prospect', prospect)
+    this.hasProspect = !!prospect
 
     this.levelTimer = setInterval(() => {
       const levels = { commercial: 0, prospect: 0 } as Record<Speaker, number>
       for (const c of this.channels) levels[c.speaker] = Math.min(1, c.level * 2.5)
-      window.autobuild.sendLevels(levels)
+      o.onLevels?.(levels)
+      if (this.sending) window.autobuild.sendLevels(levels)
     }, 200)
     return warnings
   }
