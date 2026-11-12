@@ -5,17 +5,23 @@
 Application desktop (macOS et Windows) pour les agences de développement et ESN qui vendent du sur-mesure
 (intranet, extranet, ERP, applications métier). Pendant le premier rendez-vous en visio :
 
-1. **Écoute** la visio sans bot : micro = le commercial, audio système = le prospect, transcription en direct (Gemini).
-2. **Checklist flottante** de qualification, mise à jour en continu, invisible au partage d'écran.
-3. **Brief structuré** rempli par l'IA (Claude ou Gemini), avec une citation exacte pour chaque info : rien n'est deviné.
-4. **Choix du template** selon le type de projet identifié.
-5. **Maquette sur mesure** construite pendant l'appel : identité visuelle du prospect (logo, couleurs, police, textes
-   de son site), ses objets métier, ses champs, ses rôles, des données fictives réalistes. L'IA (Claude) modifie
-   le code du template en tâche de fond ; à la fin des 30 minutes, le commercial partage la fenêtre de la maquette.
+1. **Avant** : le rendez-vous est créé à l'avance (prospect, site web, créneau) ; AutoBuild récupère l'identité
+   visuelle du prospect et prépare une maquette de départ dans le bon template.
+2. **Pendant** : l'interface se retire. Un **widget** reste par-dessus la visio (invisible en partage d'écran) :
+   infos obtenues en vert, infos à obtenir en bas, avancement du brief et de la maquette. AutoBuild écoute sans bot
+   (micro = le commercial, son de l'ordinateur = le prospect), transcrit (Gemini), remplit le **brief** avec une
+   citation exacte pour chaque info (Claude ou Gemini), et l'IA **code la maquette** à partir du template.
+3. **Fin** : la maquette s'ouvre en plein écran, aux couleurs du prospect, avec ses objets métier et ses mots.
+4. **Après** : chaque rendez-vous garde sa synthèse, son brief, sa transcription, sa maquette (et ses versions) et
+   son compte rendu ; le rendez-vous suivant reprend la maquette.
 
-| Pendant l'appel | Checklist flottante | Maquette générée (scénario de démo) |
+| Préparation | Widget pendant l'appel | Maquette en fin d'appel |
 |---|---|---|
-| ![Pendant l'appel](docs/captures/2-pendant-l-appel.png) | ![Checklist](docs/captures/3-checklist-flottante.png) | ![Maquette](docs/captures/4-maquette.png) |
+| ![Préparation](docs/captures/1-preparation.png) | ![Widget](docs/captures/2-widget.png) | ![Maquette](docs/captures/4-maquette.png) |
+
+| Interface pendant l'appel | Rendez-vous passé | Brief et preuves |
+|---|---|---|
+| ![En cours](docs/captures/3-interface-en-cours.png) | ![Synthèse](docs/captures/5-synthese.png) | ![Brief](docs/captures/6-brief.png) |
 
 ---
 
@@ -28,11 +34,11 @@ npm run setup      # installe l'application + les dépendances du template « so
 npm run dev        # lance l'application
 ```
 
-**Sans clé API**, cliquez sur **« Lancer la démo »** : un faux rendez-vous (entreprise fictive de travaux publics) est
-rejoué, et la transcription, le brief, la checklist et la maquette se construisent comme en vrai (maquette « de base »,
-sans IA de génération).
+**Sans clé API**, cliquez sur **« Lancer la démonstration »** : un faux rendez-vous (entreprise fictive de travaux
+publics) est créé, préparé, puis rejoué en accéléré ; le widget, le brief et la maquette se construisent comme en vrai
+(maquette « de base », sans IA de génération).
 
-**Pour un vrai rendez-vous**, ouvrez **Réglages** :
+**Pour un vrai rendez-vous**, ouvrez **Réglages › Accès IA** :
 
 | Accès | Sert à | Sans lui |
 |---|---|---|
@@ -58,19 +64,22 @@ En local : `npm run dist:mac` (sur un Mac) ou `npm run dist:win` (sur un PC Wind
 
 ---
 
-## Pendant un rendez-vous
+## Un rendez-vous, de bout en bout
 
-1. **Préparer** (quelques minutes avant) : nom de l'entreprise + site web → identité visuelle extraite, maquette de
-   départ générée, preview lancée, **plan B** enregistré.
-2. **Écouter** : cochez l'information RGPD (prospect prévenu), *Démarrer l'écoute*, ouvrez la **fenêtre checklist**.
-   Suivez les **questions suggérées** pour combler les trous du brief. Un champ peut être saisi ou corrigé à la main
-   (cliquer dessus) : une saisie manuelle n'est jamais écrasée par l'IA.
-3. **Montrer** : *Finaliser* → dernière passe de l'IA et vérification → *Ouvrir la maquette* → partagez cette fenêtre.
-   En cas de souci : **Version sûre** (dernière version qui compile) ou **Plan B**.
-4. Après l'appel : *Exporter le brief* (Markdown, avec la transcription) ; la maquette reste dans
-   `Documents/AutoBuild/maquettes/` (projet Vite + React modifiable).
+1. **Nouveau rendez-vous** (en haut à droite) : entreprise, site web, créneau, lien de la visio, interlocuteurs,
+   contexte, notes. La **préparation** démarre aussitôt : identité visuelle, template, maquette de départ, plan B.
+2. **Démarrer le rendez-vous** (accueil, carte « Prochain RDV » ou page du rendez-vous) : la fenêtre de lancement
+   vérifie en direct votre micro et le son de la visio ; cochez l'accord du prospect, *Lancer l'enregistrement*.
+3. **Pendant l'appel**, seul le widget reste à l'écran : regardez le bas de la liste (ce qui manque). Boutons :
+   réduire en pastille, revenir à l'interface (bandeau rouge, brief/maquette/transcription en direct), fermer
+   (l'enregistrement continue), pause. Raccourci **Ctrl/⌘ + Alt + C**.
+4. **Terminer** → la maquette est finalisée puis s'ouvre en plein écran : partagez cette fenêtre.
+5. **Après** : page du rendez-vous → *Synthèse* (besoin, qualification, à creuser, compte rendu PDF / e-mail /
+   Markdown), *Brief* (chaque info avec son passage de transcription), *Transcription*, *Maquette* (pages, versions,
+   restauration) ; *Planifier la suite* reprend la maquette et le brief.
 
-Utilisez un **casque** : sinon le micro capte aussi la voix du prospect.
+Utilisez un **casque** : sinon le micro capte aussi la voix du prospect. Les maquettes sont des projets Vite + React
+modifiables, dans `Documents/AutoBuild/maquettes/`.
 
 ---
 
@@ -86,8 +95,8 @@ Utilisez un **casque** : sinon le micro capte aussi la voix du prospect.
                             │                                          sorties structurées
              ┌──────────────┼──────────────────────┐
              ▼              ▼                      ▼
-     fenêtre checklist   générateur de base    agent Claude (Agent SDK) ─► modifie le code du template
-     (flottante)         (app.json, sans IA)        │                         dans l'espace de travail
+     widget (par-dessus  générateur de base    agent Claude (Agent SDK) ─► modifie le code du template
+     la visio)           (app.json, sans IA)        │                         dans l'espace de travail
                              │                      ▼
                              └──────────► compilation TypeScript : OK → instantané ; échec → retour arrière
                                                     │
@@ -101,19 +110,21 @@ Détails et choix techniques : [docs/architecture.md](docs/architecture.md).
 |---|---|
 | [docs/projet.md](docs/projet.md) | Cahier des charges initial et décisions validées |
 | [docs/architecture.md](docs/architecture.md) | Flux, choix techniques, garde-fous, coûts, limites connues |
-| [docs/grille-qualification.md](docs/grille-qualification.md) | Les 26 informations du brief et les questions associées |
+| [docs/grille-qualification.md](docs/grille-qualification.md) | Les 26 informations de la grille commune |
 | [docs/catalogue-projets.md](docs/catalogue-projets.md) | Types de projets d'une agence (dont imagile.fr) et feuille de route des templates |
-| [docs/templates.md](docs/templates.md) | Créer ou brancher un template (contrat pour les agences) |
+| [docs/templates.md](docs/templates.md) | Les 4 templates intégrés, la bibliothèque de pages, créer ou brancher un template (contrat pour les agences) |
 | [docs/tests-terrain.md](docs/tests-terrain.md) | Ce qui est testé, ce qui reste à tester sur Mac/Windows, protocole des 3 faux rendez-vous |
 
 ## Structure du dépôt
 
 ```
 src/shared/      logique pure (testée) : brief, grille, preuves, catalogue, découpage audio, générateur de base
-src/main/        processus principal Electron : session, transcription Gemini, brief Claude/Gemini,
-                 extraction de marque, générateur (espace de travail, instantanés, agent, preview)
-src/renderer/    interface : fenêtre principale, fenêtre checklist, capture audio
-templates/socle/ template générique Vite + React + Tailwind piloté par app.json (+ CLAUDE.md pour l'agent)
+src/main/        processus principal Electron : données du poste, moteur des rendez-vous, transcription Gemini,
+                 brief Claude/Gemini, extraction de marque, générateur (espace de travail, versions, agent, preview)
+src/renderer/    interface : écrans (accueil, rendez-vous, prospects, templates, réglages), widget, capture audio
+templates/socle/ projet Vite + React + Tailwind piloté par app.json : kit d'interface, bibliothèque de 12 pages,
+                 CLAUDE.md pour l'agent
+templates/erp, app-metier, extranet, intranet/   templates intégrés (manifestes qui étendent le socle)
 scenarios/       faux rendez-vous rejouables (transcript + site web fictif + patchs de brief)
 scripts/         démo sans interface, tests de bout en bout de l'application et de la chaîne audio
 ```
@@ -128,13 +139,13 @@ npm run test:app         # application Electron pilotée (xvfb-run sous Linux) a
 npm run test:audio       # chaîne audio réelle avec le micro factice de Chromium
 ```
 
-## État du MVP
+## État
 
-Fonctionne et testé : pipeline complet en mode démo, interface, checklist, extraction de marque, générateur de base,
-garde-fou de compilation et retour arrière, chaîne audio (micro + loopback) jusqu'à l'envoi des tronçons,
-application packagée (Linux). **À valider sur vos machines** (impossible depuis l'environnement de développement) :
-capture de l'audio système sur macOS et Windows, appels réels à Gemini et Claude, temps et coût réels de génération.
-Voir [docs/tests-terrain.md](docs/tests-terrain.md).
+Fonctionne et testé : parcours complet en démonstration (création, préparation, widget, fin, présentation,
+rendez-vous passé), 4 templates et leur bibliothèque de pages, extraction de marque, générateur de base, garde-fou de
+compilation et versions, chaîne audio (micro + son de l'ordinateur) jusqu'à l'envoi des tronçons. **À valider sur vos
+machines** : capture de l'audio système sur macOS et Windows, widget au-dessus d'une visio plein écran, appels réels à
+Gemini et Claude, temps et coût de génération. Voir [docs/tests-terrain.md](docs/tests-terrain.md).
 
-Reste à faire : **les templates métier** (ERP, CRM, intranet, extranet, app métier…), voir
-[docs/catalogue-projets.md](docs/catalogue-projets.md).
+Prochaines étapes : templates CRM, planning/interventions, mobile terrain, configurateur ; synchronisation de l'agenda
+et des données entre les postes de l'agence.

@@ -3,8 +3,43 @@
 Un template est un **projet web complet** (aujourd'hui Vite + React + TypeScript + Tailwind) que AutoBuild copie pour
 chaque rendez-vous, habille aux couleurs du prospect, remplit à partir du brief, puis fait modifier par l'IA.
 
-Une agence peut fournir **ses propres templates** (et sa signature) : Réglages → *Templates de l'agence…* → choisir un
+Une agence peut fournir **ses propres templates** (et sa signature) : Réglages → *Templates de l'agence* → choisir un
 dossier qui contient un sous-dossier par template. Un template de l'agence remplace un template intégré de même `id`.
+
+## Deux formes de template
+
+1. **Projet complet** : un projet web autonome (structure ci-dessous).
+2. **Manifeste qui étend un projet de base** (`"extends": "socle"`) : il ne contient que son `template.json` (et
+   éventuellement des fichiers à superposer au projet de base). Il décrit sa **mise en page** et sa **bibliothèque
+   de pages**. C'est la forme des 4 templates intégrés :
+
+| Template | Mise en page | Types de projets | Pages |
+|---|---|---|---|
+| ERP / gestion commerciale | menu latéral | ERP, CRM, pilotage / BI, e-commerce B2B | tableau de bord, clients (base) ; devis, commandes, factures, articles, stocks, fournisseurs, production, opportunités, planning, reporting, droits, paramètres (options) |
+| Application métier | menu latéral | application métier, planning et RDV, GED, mobile terrain, configurateur | tableau de bord (base) ; suivi des étapes, planning, interventions, documents, clients, équipe, reporting, droits, paramètres (options) |
+| Extranet / portail client | menu horizontal | extranet, site institutionnel, annuaire | accueil, mon compte (base) ; commandes, demandes, documents, factures, annuaire, actualités (options) |
+| Intranet | menu horizontal | intranet | actualités, annuaire, documents (base) ; demandes, agenda, droits (options) |
+
+Comme ils partagent le même projet (le socle), **le template peut changer pendant l'appel** : quand le type de projet
+devient clair, AutoBuild passe au template le plus adapté (tant que l'IA n'a pas encore pris la main sur la maquette,
+et si le commercial a laissé le choix « Automatique »).
+
+### Pages : base et options
+
+```json
+{ "id": "devis", "label": "Devis", "description": "Éditeur de devis…", "niveau": "option",
+  "kind": "page", "cible": "devis", "declencheurs": ["devis", "chiffrage", "proposition commerciale"], "icone": "file" }
+```
+
+| Champ | Rôle |
+|---|---|
+| `niveau` | `base` : toujours dans la maquette. `option` : activée si un `declencheur` est cité dans le brief (les 4 plus citées au plus, au départ). |
+| `kind` | `tableau-de-bord`, `entite` (liste / kanban / calendrier / fiche générées depuis `app.json`, `cible` = nom de l'objet, ex. « Facture ») ou `page` (page de la bibliothèque du socle, `cible` = id). |
+
+Bibliothèque de pages du socle (`templates/socle/src/pages/library/`) : `planning`, `devis`, `stocks`, `reporting`,
+`droits`, `parametres`, `documents`, `actualites`, `annuaire`, `accueil-portail`, `tickets`, `suivi`. Elles
+s'adaptent aux entités de la maquette (`source` dans la navigation : l'entité dont elles affichent les données).
+L'IA peut les adapter, ou créer une page sur mesure dans `src/pages/custom/` (prioritaire sur la bibliothèque).
 
 ## Structure minimale
 
@@ -37,7 +72,11 @@ mon-template/
 | Champ | Rôle |
 |---|---|
 | `projectTypes` | Ids du catalogue ([catalogue-projets.md](catalogue-projets.md)) couverts. `["*"]` = tous. |
-| `fallback` | Template utilisé quand aucun autre ne correspond (le « socle »). |
+| `fallback` | Template utilisé quand aucun autre ne correspond (le « socle »). Ne s'hérite pas. |
+| `extends` | Id du projet de base (manifeste seulement). |
+| `layout` | `sidebar` (back-office) ou `topnav` (portail). Écrit dans `app.json`. |
+| `couleur` | Couleur de la vignette dans la bibliothèque des templates. |
+| `pages` | Bibliothèque de pages (voir plus haut). |
 | `dev` | Script Node qui lance le serveur de preview. `{port}` est remplacé. Exécuté avec le Node embarqué d'Electron. |
 | `check` | Script Node de vérification (doit sortir en code 0) : lancé après chaque étape IA ; en cas d'échec, retour arrière. |
 | `mockupDir` | Dossier où AutoBuild écrit les fichiers de données. |
@@ -87,9 +126,16 @@ npm run dev     # travailler le rendu
 npm run check   # doit passer
 ```
 
-Puis Réglages → *Templates de l'agence…* → `~/AutoBuild-templates`.
+Puis Réglages → *Templates de l'agence* → `~/AutoBuild-templates`.
+
+Pour une simple variante (autre jeu de pages, autre mise en page), un manifeste suffit :
+
+```json
+{ "id": "portail-adherents", "name": "Portail adhérents", "description": "…", "extends": "socle",
+  "projectTypes": ["extranet"], "layout": "topnav", "couleur": "#be185d", "pages": [ … ] }
+```
 
 ## Signature de l'agence
 
-Réglages → *Signature de l'agence* : nom, mention et logo. Ils apparaissent dans la maquette (pied de la barre
+Réglages → *Agence et signature* : nom, mention et logo. Ils apparaissent dans la maquette (pied de la barre
 latérale et page de connexion dans le socle) via `agence.json`.
